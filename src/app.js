@@ -19,12 +19,14 @@ app.use(cors({
     'http://localhost:3000',
     'http://localhost:3001',
     'http://localhost:5000',
-    'https://cxlddy.github.io'
+
+    'https://cxlddy.github.io',
+    'https://almoxarifado-theta.vercel.app/'
   ],
-  methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
-app.use(express.json());
 
 app.get('/', (req, res) => {
   res.json({ mensagem: 'API do almoxarifado funcionando' });
