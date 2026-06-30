@@ -21,34 +21,28 @@ async function login(email, senha) {
     throw new Error(loginError.message);
   }
 
-  const userId = loginData.user.id;
+  const authUser = loginData.user;
 
   const { data: usuario, error: usuarioError } = await supabase
     .from('usuarios')
-    .select(`
-      id,
-      nome,
-      email,
-      perfil,
-      cargo,
-      telefone,
-      ativo,
-      setores (
-        id,
-        nome
-      ),
-      centros_custo (
-        id,
-        codigo,
-        nome
-      )
-    `)
-    .eq('id', userId)
-    .eq('ativo', true)
-    .single();
+    .select('*')
+    .eq('id', authUser.id)
+    .maybeSingle();
 
-  if (usuarioError || !usuario) {
-    throw new Error('Usuário não cadastrado ou inativo no sistema');
+  if (usuarioError) {
+    throw new Error(`Erro ao consultar tabela usuarios: ${usuarioError.message}`);
+  }
+
+  if (!usuario) {
+    throw new Error(
+      `Usuário autenticado no Supabase Auth, mas não existe na tabela usuarios. Auth ID: ${authUser.id} | Email: ${authUser.email}`
+    );
+  }
+
+  if (usuario.ativo !== true) {
+    throw new Error(
+      `Usuário encontrado na tabela usuarios, mas está inativo. ID: ${usuario.id} | Email: ${usuario.email}`
+    );
   }
 
   return {
