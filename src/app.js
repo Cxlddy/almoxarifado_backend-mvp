@@ -14,7 +14,11 @@ import authRoutes from './routes/auth.routes.js';
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://Cxlddy.github.io'
+  ]
+}));
 app.use(express.json());
 
 app.get('/', (req, res) => {
