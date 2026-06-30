@@ -1,18 +1,68 @@
 async function enviarMensagemWhatsapp({ telefone, mensagem }) {
+  const provider = process.env.WHATSAPP_PROVIDER || 'simulado';
+
+  if (provider === 'evolution') {
+    return enviarViaEvolution({
+      telefone,
+      mensagem
+    });
+  }
+
+  if (provider === 'meta') {
+    return enviarViaMeta({
+      telefone,
+      mensagem
+    });
+  }
+
+  console.log('--- MODO SIMULADO WHATSAPP ---');
+  console.log(`Para: ${telefone}`);
+  console.log(mensagem);
+  console.log('------------------------------');
+
+  return {
+    simulado: true,
+    telefone,
+    mensagem
+  };
+}
+
+async function enviarViaEvolution({ telefone, mensagem }) {
+  const apiUrl = process.env.WHATSAPP_API_URL;
+  const apiKey = process.env.WHATSAPP_API_KEY;
+  const instance = process.env.WHATSAPP_INSTANCE;
+
+  if (!apiUrl || !apiKey || !instance) {
+    throw new Error('Evolution API não configurada nas variáveis de ambiente');
+  }
+
+  const resposta = await fetch(`${apiUrl}/message/sendText/${instance}`, {
+    method: 'POST',
+    headers: {
+      apikey: apiKey,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      number: telefone,
+      text: mensagem
+    })
+  });
+
+  const resultado = await resposta.json();
+
+  if (!resposta.ok) {
+    throw new Error(JSON.stringify(resultado));
+  }
+
+  return resultado;
+}
+
+async function enviarViaMeta({ telefone, mensagem }) {
   const whatsappToken = process.env.WHATSAPP_TOKEN;
   const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
   if (!whatsappToken || !phoneNumberId) {
-    console.log('--- MODO SIMULADO WHATSAPP ---');
-    console.log(`Para: ${telefone}`);
-    console.log(mensagem);
-    console.log('------------------------------');
-
-    return {
-      simulado: true,
-      telefone,
-      mensagem
-    };
+    throw new Error('Meta WhatsApp API não configurada');
   }
 
   const resposta = await fetch(
