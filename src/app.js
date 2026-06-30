@@ -10,7 +10,6 @@ import autorizacoesRoutes from './routes/autorizacoes.routes.js';
 import cadastrosRoutes from './routes/cadastros.routes.js';
 import usuariosRoutes from './routes/usuarios.routes.js';
 import authRoutes from './routes/auth.routes.js';
-import whatsappWebhookRoutes from './routes/whatsappWebhook.routes.js';
 
 
 const app = express();
@@ -36,6 +35,5 @@ app.use('/autorizacoes', autorizacoesRoutes);
 app.use('/cadastros', cadastrosRoutes);
 app.use('/usuarios', usuariosRoutes);
 app.use('/auth', authRoutes);
-app.use('/webhook/whatsapp', whatsappWebhookRoutes);
 
 export default app;
