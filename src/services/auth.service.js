@@ -54,6 +54,54 @@ async function login(email, senha) {
   };
 }
 
+async function forgotPassword(email) {
+  const frontendUrl = process.env.FRONTEND_URL;
+
+  if (!frontendUrl) {
+    throw new Error('FRONTEND_URL não configurada nas variáveis de ambiente');
+  }
+
+  const redirectTo = `${frontendUrl}?resetar_senha=true`;
+
+  const { error } = await supabaseAuth.auth.resetPasswordForEmail(email, {
+    redirectTo
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return true;
+}
+
+async function resetPassword({ access_token, refresh_token, senha }) {
+  const supabaseRecovery = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_ANON_KEY
+  );
+
+  const { error: sessionError } = await supabaseRecovery.auth.setSession({
+    access_token,
+    refresh_token
+  });
+
+  if (sessionError) {
+    throw new Error(sessionError.message);
+  }
+
+  const { error: updateError } = await supabaseRecovery.auth.updateUser({
+    password: senha
+  });
+
+  if (updateError) {
+    throw new Error(updateError.message);
+  }
+
+  return true;
+}
+
 export default {
-  login
+  login,
+  forgotPassword,
+  resetPassword
 };

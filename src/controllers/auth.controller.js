@@ -22,13 +22,56 @@ async function login(req, res) {
 }
 
 async function logout(req, res) {
+  return res.status(200).json({
+    mensagem: 'Logout realizado com sucesso'
+  });
+}
+
+async function forgotPassword(req, res) {
   try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        mensagem: 'Email é obrigatório'
+      });
+    }
+
+    await authService.forgotPassword(email);
+
     return res.status(200).json({
-      mensagem: 'Logout realizado com sucesso'
+      mensagem: 'Se o email estiver cadastrado, as instruções serão enviadas.'
     });
   } catch (error) {
     return res.status(500).json({
-      mensagem: 'Erro ao fazer logout',
+      mensagem: 'Erro ao solicitar recuperação de senha',
+      erro: error.message
+    });
+  }
+}
+
+async function resetPassword(req, res) {
+  try {
+    const { access_token, refresh_token, senha } = req.body;
+
+    if (!access_token || !refresh_token || !senha) {
+      return res.status(400).json({
+        mensagem: 'Access token, refresh token e nova senha são obrigatórios'
+      });
+    }
+
+    await authService.resetPassword({
+      access_token,
+      refresh_token,
+      senha
+    });
+
+    return res.status(200).json({
+      mensagem: 'Senha redefinida com sucesso'
+    });
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: 'Erro ao redefinir senha',
       erro: error.message
     });
   }
@@ -36,5 +79,7 @@ async function logout(req, res) {
 
 export default {
   login,
-  logout
+  logout,
+  forgotPassword,
+  resetPassword
 };
