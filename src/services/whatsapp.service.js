@@ -1,3 +1,64 @@
+function montarMensagemAutorizacao({
+  solicitacao,
+  itens = [],
+  linkAprovar,
+  linkNegar
+}) {
+  const listaItens = itens.length
+    ? itens.map((item, index) => {
+        const nomeProduto =
+          item.produto_nome ||
+          item.produtos?.nome ||
+          item.nome ||
+          'Produto não informado';
+
+        const quantidade =
+          item.quantidade_solicitada ||
+          item.quantidade ||
+          '-';
+
+        return `${index + 1}. ${nomeProduto} — Qtd: ${quantidade}`;
+      }).join('\n')
+    : 'Itens não informados';
+
+  return `
+📦 *Nova Solicitação de Material*
+
+Uma nova solicitação foi registrada no sistema de almoxarifado e precisa da sua análise.
+
+━━━━━━━━━━━━━━━━━━━━
+
+🧾 *Solicitação*
+ID: ${solicitacao.id}
+
+📌 *Status*
+Aguardando autorização
+
+📝 *Justificativa*
+${solicitacao.justificativa || 'Não informada'}
+
+💬 *Observação*
+${solicitacao.observacao || 'Não informada'}
+
+━━━━━━━━━━━━━━━━━━━━
+
+📋 *Itens solicitados*
+${listaItens}
+
+━━━━━━━━━━━━━━━━━━━━
+
+✅ *Aprovar solicitação*
+${linkAprovar}
+
+❌ *Negar solicitação*
+${linkNegar}
+
+━━━━━━━━━━━━━━━━━━━━
+
+⚠️ Esta autorização é individual e deve ser realizada apenas pelo responsável do almoxarifado.
+`.trim();
+}
+
 async function enviarMensagemWhatsapp({ telefone, mensagem }) {
   const provider = process.env.WHATSAPP_PROVIDER || 'simulado';
 
@@ -94,5 +155,6 @@ async function enviarViaMeta({ telefone, mensagem }) {
 }
 
 export default {
-  enviarMensagemWhatsapp
+  enviarMensagemWhatsapp,
+  montarMensagemAutorizacao
 };
