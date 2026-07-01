@@ -35,7 +35,7 @@ async function login(email, senha) {
 
   if (!usuario) {
     throw new Error(
-      `Usuário autenticado no Supabase Auth, mas não existe na tabela usuarios. Auth ID: ${authUser.id} | Email: ${authUser.email}`
+      `Usuário autenticado no Supabase Auth, mas não existe na tabela usuarios.`
     );
   }
 
