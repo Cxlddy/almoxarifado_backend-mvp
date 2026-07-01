@@ -9,7 +9,7 @@ router.get('/', produtosController.listarProdutos);
 router.post(
   '/',
   autenticarUsuario,
-  autorizarPerfis('admin', 'almoxarife'),
+  autorizarPerfis('admin'),
   produtosController.criarProduto
 );
 

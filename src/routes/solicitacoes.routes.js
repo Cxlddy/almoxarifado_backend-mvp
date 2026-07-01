@@ -7,21 +7,21 @@ const router = express.Router();
 router.get(
   '/',
   autenticarUsuario,
-  autorizarPerfis('admin', 'gestor', 'almoxarife'),
+  autorizarPerfis('admin'),
   solicitacoesController.listarSolicitacoes
 );
 
 router.post(
   '/',
   autenticarUsuario,
-  autorizarPerfis('admin', 'gestor', 'almoxarife', 'solicitante'),
+  autorizarPerfis('admin', 'usuario'),
   solicitacoesController.criarSolicitacao
 );
 
 router.post(
   '/:id/atender',
   autenticarUsuario,
-  autorizarPerfis('admin', 'almoxarife'),
+  autorizarPerfis('admin'),
   solicitacoesController.atenderSolicitacao
 );
 

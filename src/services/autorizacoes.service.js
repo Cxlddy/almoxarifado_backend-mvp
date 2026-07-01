@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 import supabase from '../database/supabase.js';
 
-function gerarToken() {
-  return crypto.randomBytes(32).toString('hex');
+function gerarTokenCurto() {
+  return crypto.randomBytes(6).toString('base64url');
 }
 
 async function criarAutorizacao({
@@ -10,20 +10,19 @@ async function criarAutorizacao({
   almoxarife_id,
   telefone_whatsapp
 }) {
-  const token_aprovacao = gerarToken();
-  const token_negacao = gerarToken();
+  const token_aprovacao = gerarTokenCurto();
+  const token_negacao = gerarTokenCurto();
 
   const { data, error } = await supabase
     .from('autorizacoes_solicitacao')
-    .insert([
-      {
-        solicitacao_id,
-        almoxarife_id,
-        telefone_whatsapp,
-        token_aprovacao,
-        token_negacao
-      }
-    ])
+    .insert([{
+      solicitacao_id,
+      almoxarife_id,
+      telefone_whatsapp,
+      token_aprovacao,
+      token_negacao,
+      status: 'pendente'
+    }])
     .select()
     .single();
 
@@ -35,8 +34,9 @@ async function criarAutorizacao({
 }
 
 async function responderAutorizacao(token, resposta) {
-  const campoToken =
-    resposta === 'aprovada' ? 'token_aprovacao' : 'token_negacao';
+  const campoToken = resposta === 'aprovada'
+    ? 'token_aprovacao'
+    : 'token_negacao';
 
   const { data: autorizacao, error: erroBusca } = await supabase
     .from('autorizacoes_solicitacao')

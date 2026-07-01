@@ -7,7 +7,7 @@ const router = express.Router();
 router.post(
   '/',
   autenticarUsuario,
-  autorizarPerfis('admin', 'almoxarife'),
+  autorizarPerfis('admin'),
   movimentacoesController.criarMovimentacao
 );
 

@@ -31,9 +31,10 @@ app.use('/produtos', produtosRoutes);
 app.use('/movimentacoes', movimentacoesRoutes);
 app.use('/saldo-estoque', saldoEstoqueRoutes);
 app.use('/solicitacoes', solicitacoesRoutes);
-app.use('/autorizacoes', autorizacoesRoutes);
+app.use('/', autorizacoesRoutes);
 app.use('/cadastros', cadastrosRoutes);
 app.use('/usuarios', usuariosRoutes);
 app.use('/auth', authRoutes);
+
 
 export default app;

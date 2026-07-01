@@ -96,11 +96,11 @@ async function enviarAutorizacaoParaAlmoxarife(solicitacao) {
     telefone_whatsapp: telefoneAlmoxarife
   });
 
-  const linkAprovar = `${appPublicUrl}/autorizacoes/aprovar/${autorizacao.token_aprovacao}`;
-  const linkNegar = `${appPublicUrl}/autorizacoes/negar/${autorizacao.token_negacao}`;
+  const linkAprovar = `${appPublicUrl}/a/${autorizacao.token_aprovacao}`;
+  const linkNegar = `${appPublicUrl}/n/${autorizacao.token_negacao}`;
 
   const mensagem = [
-    'Nova solicitação de material.',
+    '*Nova solicitação de material*',
     '',
     `Justificativa: ${solicitacao.justificativa || 'Não informada'}`,
     `Observação: ${solicitacao.observacao || 'Não informada'}`,

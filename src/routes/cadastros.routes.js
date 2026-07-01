@@ -27,14 +27,14 @@ router.post(
 router.post(
   '/locais-estoque',
   autenticarUsuario,
-  autorizarPerfis('admin', 'almoxarife'),
+  autorizarPerfis('admin'),
   cadastrosController.criarLocalEstoque
 );
 
 router.post(
   '/fornecedores',
   autenticarUsuario,
-  autorizarPerfis('admin', 'almoxarife'),
+  autorizarPerfis('admin'),
   cadastrosController.criarFornecedor
 );
 

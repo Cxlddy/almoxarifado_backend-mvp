@@ -3,7 +3,10 @@ import autorizacoesController from '../controllers/autorizacoes.controller.js';
 
 const router = express.Router();
 
-router.get('/aprovar/:token', autorizacoesController.aprovar);
-router.get('/negar/:token', autorizacoesController.negar);
+router.get('/a/:token', autorizacoesController.telaAprovar);
+router.post('/a/:token', autorizacoesController.aprovar);
+
+router.get('/n/:token', autorizacoesController.telaNegar);
+router.post('/n/:token', autorizacoesController.negar);
 
 export default router;
