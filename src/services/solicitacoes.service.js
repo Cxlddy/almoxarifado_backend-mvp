@@ -53,12 +53,12 @@ async function listarSolicitacoes(usuario) {
   return data;
 }
 
-async function criarSolicitacao(dadosSolicitacao, itens) {
+async function criarSolicitacao(dadosSolicitacao, itens, admin_id) {
   const { data: solicitacao, error: erroSolicitacao } = await supabase
     .from('solicitacoes')
     .insert([dadosSolicitacao])
     .select()
-    .single();
+    .single()
 
   if (erroSolicitacao) {
     throw new Error(erroSolicitacao.message);
@@ -81,7 +81,7 @@ async function criarSolicitacao(dadosSolicitacao, itens) {
   }
 
   try {
-    await enviarAutorizacaoParaAlmoxarife(solicitacao);
+    await enviarAutorizacaoParaAdmin(solicitacao, admin_id);
   } catch (error) {
     console.error('Erro ao enviar autorização por Whatsapp: ', error.message);
   }
@@ -92,18 +92,33 @@ async function criarSolicitacao(dadosSolicitacao, itens) {
   };
 }
 
-async function enviarAutorizacaoParaAlmoxarife(solicitacao) {
-  const telefoneAlmoxarife = process.env.ALMOXARIFE_WHATSAPP;
+async function enviarAutorizacaoParaAdmin(solicitacao, admin_id) {
   const appPublicUrl = process.env.APP_PUBLIC_URL || 'http://localhost:3000';
 
-  if (!telefoneAlmoxarife) {
-    return;
+  if (!admin_id) {
+    throw new Error('Selecione um admin para receber a autorização');
+  }
+
+  const { data: admin, error } = await supabase
+    .from('usuarios')
+    .select('id, nome, telefone, perfil, ativo')
+    .eq('id', admin_id)
+    .eq('perfil', 'admin')
+    .eq('ativo', true)
+    .single();
+
+  if (error || !admin) {
+    throw new Error('Admin responsável não encontrado ou inativo');
+  }
+
+  if (!admin.telefone) {
+    throw new Error('O admin selecionado não possui telefone cadastrado');
   }
 
   const autorizacao = await autorizacoesService.criarAutorizacao({
     solicitacao_id: solicitacao.id,
-    almoxarife_id: null,
-    telefone_whatsapp: telefoneAlmoxarife
+    almoxarife_id: admin.id,
+    telefone_whatsapp: admin.telefone
   });
 
   const linkAprovar = `${appPublicUrl}/a/${autorizacao.token_aprovacao}`;
@@ -112,6 +127,7 @@ async function enviarAutorizacaoParaAlmoxarife(solicitacao) {
   const mensagem = [
     '*Nova solicitação de material*',
     '',
+    `Responsável: ${admin.nome}`,
     `Justificativa: ${solicitacao.justificativa || 'Não informada'}`,
     `Observação: ${solicitacao.observacao || 'Não informada'}`,
     '',
@@ -121,7 +137,7 @@ async function enviarAutorizacaoParaAlmoxarife(solicitacao) {
   ].join('\n');
 
   await whatsappService.enviarMensagemWhatsapp({
-    telefone: telefoneAlmoxarife,
+    telefone: admin.telefone,
     mensagem
   });
 }

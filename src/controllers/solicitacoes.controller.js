@@ -18,6 +18,7 @@ async function criarSolicitacao(req, res) {
       setor_id,
       centro_custo_id,
       justificativa,
+      admin_id,
       observacao,
       itens
     } = req.body;
@@ -37,7 +38,8 @@ async function criarSolicitacao(req, res) {
         observacao,
         status: 'enviada'
       },
-      itens
+      itens,
+      admin_id
     );
 
     return res.status(201).json(solicitacao);

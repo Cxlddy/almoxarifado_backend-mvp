@@ -80,8 +80,21 @@ async function atualizarUsuario(req, res) {
   }
 }
 
+async function listarAdmins(req, res) {
+  try {
+    const admins = await usuariosService.listarAdmins();
+    return res.status(200).json(admins);
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: 'Erro ao listar admins',
+      erro: error.message
+    });
+  }
+}
+
 export default {
   listarUsuarios,
+  listarAdmins,
   criarUsuario,
   atualizarUsuario
 };

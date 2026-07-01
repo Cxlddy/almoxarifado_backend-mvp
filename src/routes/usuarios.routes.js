@@ -4,6 +4,13 @@ import { autenticarUsuario, autorizarPerfis } from '../middlewares/auth.middlewa
 
 const router = express.Router();
 
+router.get(
+  '/admins',
+  autenticarUsuario,
+  autorizarPerfis('admin', 'usuario'),
+  usuariosController.listarAdmins
+);
+
 router.use(autenticarUsuario);
 router.use(autorizarPerfis('admin'));
 

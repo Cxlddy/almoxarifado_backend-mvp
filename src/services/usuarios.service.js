@@ -42,8 +42,25 @@ async function atualizarUsuario(id, dadosUsuario) {
   return data;
 }
 
+
+async function listarAdmins() {
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('id, nome, email, telefone')
+    .eq('perfil', 'admin')
+    .eq('ativo', true)
+    .order('nome', { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 export default {
   listarUsuarios,
+  listarAdmins,
   criarUsuario,
   atualizarUsuario
 };
