@@ -7,7 +7,7 @@ function gerarTokenCurto() {
 }
 
 async function listarEmprestimosPendentes(usuario) {
-  let query = supabase
+  const { data: itens, error: erroItens } = await supabase
     .from('solicitacao_itens')
     .select(`
       id,
@@ -35,8 +35,6 @@ async function listarEmprestimosPendentes(usuario) {
     `)
     .gt('quantidade_atendida', 0);
 
-  const { data: itens, error: erroItens } = await query;
-
   if (erroItens) {
     throw new Error(erroItens.message);
   }
@@ -47,20 +45,37 @@ async function listarEmprestimosPendentes(usuario) {
     return [];
   }
 
-  const { data: devolucoes, error: erroDevolucoes } = await supabase
+  const { data: devolucoesConfirmadas, error: erroConfirmadas } = await supabase
     .from('movimentacoes_estoque')
     .select('solicitacao_item_id, quantidade')
     .in('solicitacao_item_id', itemIds)
     .eq('tipo', 'entrada')
     .eq('origem', 'devolucao');
 
-  if (erroDevolucoes) {
-    throw new Error(erroDevolucoes.message);
+  if (erroConfirmadas) {
+    throw new Error(erroConfirmadas.message);
   }
 
-  const devolvidoPorItem = devolucoes.reduce((total, mov) => {
+  const { data: devolucoesPendentes, error: erroPendentes } = await supabase
+    .from('devolucoes_emprestimos')
+    .select('solicitacao_item_id, quantidade')
+    .in('solicitacao_item_id', itemIds)
+    .eq('status', 'pendente');
+
+  if (erroPendentes) {
+    throw new Error(erroPendentes.message);
+  }
+
+  const confirmadoPorItem = devolucoesConfirmadas.reduce((total, mov) => {
     total[mov.solicitacao_item_id] =
       (total[mov.solicitacao_item_id] || 0) + Number(mov.quantidade || 0);
+
+    return total;
+  }, {});
+
+  const pendentePorItem = devolucoesPendentes.reduce((total, dev) => {
+    total[dev.solicitacao_item_id] =
+      (total[dev.solicitacao_item_id] || 0) + Number(dev.quantidade || 0);
 
     return total;
   }, {});
@@ -68,8 +83,11 @@ async function listarEmprestimosPendentes(usuario) {
   return itens
     .map((item) => {
       const quantidadeAtendida = Number(item.quantidade_atendida || 0);
-      const quantidadeDevolvida = Number(devolvidoPorItem[item.id] || 0);
-      const quantidadePendente = quantidadeAtendida - quantidadeDevolvida;
+      const quantidadeDevolvida = Number(confirmadoPorItem[item.id] || 0);
+      const quantidadeAguardandoConfirmacao = Number(pendentePorItem[item.id] || 0);
+
+      const quantidadePendente =
+        quantidadeAtendida - quantidadeDevolvida - quantidadeAguardandoConfirmacao;
 
       return {
         id: item.id,
@@ -79,6 +97,7 @@ async function listarEmprestimosPendentes(usuario) {
         solicitacao: item.solicitacoes,
         quantidade_atendida: quantidadeAtendida,
         quantidade_devolvida: quantidadeDevolvida,
+        quantidade_aguardando_confirmacao: quantidadeAguardandoConfirmacao,
         quantidade_pendente_devolucao: quantidadePendente,
         observacao: item.observacao
       };
@@ -179,6 +198,10 @@ async function solicitarDevolucao(dados, usuario) {
   );
 
   const quantidadeDisponivel = quantidadeAtendida - totalConfirmado - totalPendente;
+
+  if (quantidadeDisponivel <= 0) {
+    throw new Error('Este item já possui devolução pendente de confirmação ou já foi totalmente devolvido');
+  }
 
   if (Number(quantidade) > quantidadeDisponivel) {
     throw new Error(`A quantidade máxima para devolução é ${quantidadeDisponivel}`);
