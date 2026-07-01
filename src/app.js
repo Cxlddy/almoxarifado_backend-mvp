@@ -16,7 +16,8 @@ import devolucoesRoutes from './routes/devolucoes.routes.js';
 const app = express();
 
 const allowedOrigins = [
-    'https://almoxarifado-theta.vercel.app'
+    'https://almoxarifado-theta.vercel.app',
+    'https://almoxarifado-backend-tan.vercel.app'
 ];
 
 const corsOptions = {
