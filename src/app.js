@@ -10,15 +10,29 @@ import autorizacoesRoutes from './routes/autorizacoes.routes.js';
 import cadastrosRoutes from './routes/cadastros.routes.js';
 import usuariosRoutes from './routes/usuarios.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import devolucoesRoutes from './routes/devolucoes.routes.js';
 
 
 const app = express();
 
-app.use(cors({
-  origin: true,
+const allowedOrigins = [
+    'https://almoxarifado-theta.vercel.app'
+];
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
+  },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false
+};
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
@@ -35,6 +49,7 @@ app.use('/', autorizacoesRoutes);
 app.use('/cadastros', cadastrosRoutes);
 app.use('/usuarios', usuariosRoutes);
 app.use('/auth', authRoutes);
+app.use('/devolucoes', devolucoesRoutes);
 
 
 export default app;
