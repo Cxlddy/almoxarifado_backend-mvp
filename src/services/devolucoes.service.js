@@ -237,19 +237,46 @@ async function solicitarDevolucao(dados, usuario) {
 }
 
 async function enviarMensagemConfirmacao(devolucao, item) {
-  const telefoneAdmin = process.env.ALMOXARIFE_WHATSAPP;
   const appPublicUrl = process.env.APP_PUBLIC_URL || 'http://localhost:3000';
 
-  if (!telefoneAdmin) {
-    return;
+  const { data: autorizacao, error } = await supabase
+    .from('autorizacoes_solicitacao')
+    .select(`
+      id,
+      almoxarife_id,
+      usuarios:almoxarife_id (
+        id,
+        nome,
+        telefone
+      )
+    `)
+    .eq('solicitacao_id', item.solicitacao_id)
+    .eq('status', 'aprovada')
+    .order('respondido_em', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!autorizacao || !autorizacao.usuarios) {
+    throw new Error('Não foi encontrado o admin que aprovou esta solicitação');
+  }
+
+  const admin = autorizacao.usuarios;
+
+  if (!admin.telefone) {
+    throw new Error('O admin que aprovou esta solicitação não possui telefone cadastrado');
   }
 
   const linkConfirmar = `${appPublicUrl}/devolucoes/confirmar/${devolucao.token_confirmacao}`;
   const linkNegar = `${appPublicUrl}/devolucoes/negar/${devolucao.token_negacao}`;
 
   const mensagem = [
-    'Solicitação de devolução de item.',
+    '*Solicitação de devolução de item*',
     '',
+    `Admin responsável: ${admin.nome || 'Não informado'}`,
     `Produto: ${item.produtos?.nome || 'Não informado'}`,
     `Código: ${item.produtos?.codigo_interno || 'Sem código'}`,
     `Quantidade: ${devolucao.quantidade}`,
@@ -262,7 +289,7 @@ async function enviarMensagemConfirmacao(devolucao, item) {
 
   try {
     await whatsappService.enviarMensagemWhatsapp({
-      telefone: telefoneAdmin,
+      telefone: admin.telefone,
       mensagem
     });
   } catch (error) {
