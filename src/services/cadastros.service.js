@@ -1,4 +1,5 @@
 import supabase from '../database/supabase.js';
+import { pick } from '../utils/data.utils.js';
 
 const tabelasPermitidas = [
   'setores',
@@ -7,6 +8,14 @@ const tabelasPermitidas = [
   'fornecedores',
   'unidades_medida'
 ];
+
+const camposPermitidosPorTabela = {
+  setores: ['nome', 'descricao', 'ativo'],
+  centros_custo: ['codigo', 'nome', 'descricao', 'ativo'],
+  locais_estoque: ['nome', 'descricao', 'ativo'],
+  fornecedores: ['nome', 'cnpj', 'telefone', 'email', 'ativo'],
+  unidades_medida: ['nome', 'sigla', 'ativo']
+};
 
 function validarTabela(tabela) {
   if (!tabelasPermitidas.includes(tabela)) {
@@ -36,9 +45,11 @@ async function criar(tabela, dados) {
     throw new Error('O campo nome é obrigatório');
   }
 
+  const dadosSeguros = pick(dados, camposPermitidosPorTabela[tabela] || []);
+
   const { data, error } = await supabase
     .from(tabela)
-    .insert([dados])
+    .insert([dadosSeguros])
     .select()
     .single();
 

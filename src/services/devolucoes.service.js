@@ -3,7 +3,7 @@ import supabase from '../database/supabase.js';
 import whatsappService from './whatsapp.service.js';
 
 function gerarTokenCurto() {
-  return crypto.randomBytes(16).toString('base64url');
+  return crypto.randomBytes(32).toString('base64url');
 }
 
 async function listarEmprestimosPendentes(usuario) {

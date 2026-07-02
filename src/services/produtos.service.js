@@ -1,4 +1,18 @@
 import supabase from '../database/supabase.js';
+import { pick } from '../utils/data.utils.js';
+
+const CAMPOS_PRODUTO = [
+  'categoria_id',
+  'unidade_medida_id',
+  'nome',
+  'descricao',
+  'codigo_interno',
+  'codigo_barras',
+  'estoque_minimo',
+  'estoque_maximo',
+  'controla_validade',
+  'controla_lote'
+];
 
 async function listarProdutos() {
   const { data, error } = await supabase
@@ -32,9 +46,11 @@ async function listarProdutos() {
 }
 
 async function criarProduto(dadosProduto) {
+  const dadosSeguros = pick(dadosProduto, CAMPOS_PRODUTO);
+
   const { data, error } = await supabase
     .from('produtos')
-    .insert([dadosProduto])
+    .insert([dadosSeguros])
     .select()
     .single();
 

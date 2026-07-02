@@ -1,4 +1,5 @@
 import movimentacoesService from '../services/movimentacoes.service.js';
+import { numeroPositivo, uuidValido } from '../utils/data.utils.js';
 
 async function criarMovimentacao(req, res) {
   try {
@@ -15,19 +16,19 @@ async function criarMovimentacao(req, res) {
       observacao
     } = req.body;
 
-    if (!produto_id) {
+    if (!produto_id || !uuidValido(produto_id)) {
       return res.status(400).json({ mensagem: 'O produto é obrigatório' });
     }
 
-    if (!local_estoque_id) {
+    if (!local_estoque_id || !uuidValido(local_estoque_id)) {
       return res.status(400).json({ mensagem: 'O local de estoque é obrigatório' });
     }
 
-    if (!tipo) {
+    if (!['entrada', 'saida'].includes(tipo)) {
       return res.status(400).json({ mensagem: 'O tipo da movimentação é obrigatório' });
     }
 
-    if (!quantidade || quantidade <= 0) {
+    if (!numeroPositivo(quantidade)) {
       return res.status(400).json({ mensagem: 'A quantidade deve ser maior que zero' });
     }
 

@@ -1,7 +1,16 @@
 import devolucoesService from '../services/devolucoes.service.js';
 
 function tokenValido(token) {
-  return /^[A-Za-z0-9_-]{8,128}$/.test(token || '');
+  return /^[A-Za-z0-9_-]{32,128}$/.test(token || '');
+}
+
+function escapeHtml(valor) {
+  return String(valor ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 function paginaConfirmacao({ tipo, token, titulo, mensagem }) {
@@ -18,7 +27,7 @@ function paginaConfirmacao({ tipo, token, titulo, mensagem }) {
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>${titulo}</title>
+      <title>${escapeHtml(titulo)}</title>
       <style>
         body {
           margin: 0;
@@ -68,11 +77,11 @@ function paginaConfirmacao({ tipo, token, titulo, mensagem }) {
     </head>
     <body>
       <main class="card">
-        <h1>${titulo}</h1>
-        <p>${mensagem}</p>
+        <h1>${escapeHtml(titulo)}</h1>
+        <p>${escapeHtml(mensagem)}</p>
 
-        <form method="POST" action="${action}">
-          <button type="submit">${textoBotao}</button>
+        <form method="POST" action="${escapeHtml(action)}">
+          <button type="submit">${escapeHtml(textoBotao)}</button>
         </form>
       </main>
     </body>
@@ -113,7 +122,7 @@ function paginaResultado({ tipo, titulo, mensagem }) {
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>${titulo}</title>
+      <title>${escapeHtml(titulo)}</title>
       <style>
         body {
           margin: 0;
@@ -194,10 +203,10 @@ function paginaResultado({ tipo, titulo, mensagem }) {
     </head>
     <body>
       <main class="card">
-        <div class="icon">${visual.icone}</div>
-        <div class="badge">${visual.label}</div>
-        <h1>${titulo}</h1>
-        <p>${mensagem}</p>
+        <div class="icon">${escapeHtml(visual.icone)}</div>
+        <div class="badge">${escapeHtml(visual.label)}</div>
+        <h1>${escapeHtml(titulo)}</h1>
+        <p>${escapeHtml(mensagem)}</p>
         <button onclick="window.history.back()">Voltar ao sistema</button>
       </main>
     </body>

@@ -1,6 +1,7 @@
 import supabase from '../database/supabase.js';
 import autorizacoesService from './autorizacoes.service.js';
 import whatsappService from './whatsapp.service.js';
+import { numeroPositivo, uuidValido } from '../utils/data.utils.js';
 
 async function listarSolicitacoes(usuario) {
   let query = supabase
@@ -54,6 +55,20 @@ async function listarSolicitacoes(usuario) {
 }
 
 async function criarSolicitacao(dadosSolicitacao, itens, admin_id) {
+  if (!uuidValido(admin_id)) {
+    throw new Error('Admin responsável inválido');
+  }
+
+  if (!Array.isArray(itens) || itens.length === 0 || itens.length > 50) {
+    throw new Error('A solicitação precisa ter entre 1 e 50 itens');
+  }
+
+  itens.forEach((item) => {
+    if (!uuidValido(item.produto_id) || !numeroPositivo(item.quantidade_solicitada)) {
+      throw new Error('Item de solicitação inválido');
+    }
+  });
+
   const { data: solicitacao, error: erroSolicitacao } = await supabase
     .from('solicitacoes')
     .insert([dadosSolicitacao])

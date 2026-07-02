@@ -25,7 +25,7 @@ async function login(email, senha) {
 
   const { data: usuario, error: usuarioError } = await supabase
     .from('usuarios')
-    .select('*')
+    .select('id, nome, email, perfil, setor_id, centro_custo_id, cargo, telefone, ativo')
     .eq('id', authUser.id)
     .maybeSingle();
 

@@ -1,7 +1,16 @@
 import autorizacoesService from '../services/autorizacoes.service.js';
 
 function tokenValido(token) {
-  return /^[A-Za-z0-9_-]{8,128}$/.test(token || '');
+  return /^[A-Za-z0-9_-]{32,128}$/.test(token || '');
+}
+
+function escapeHtml(valor) {
+  return String(valor ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
 }
 
 function paginaConfirmacao({ titulo, texto, action, botao, cor }) {
@@ -11,7 +20,7 @@ function paginaConfirmacao({ titulo, texto, action, botao, cor }) {
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>${titulo}</title>
+      <title>${escapeHtml(titulo)}</title>
       <style>
         body {
           margin: 0;
@@ -60,11 +69,11 @@ function paginaConfirmacao({ titulo, texto, action, botao, cor }) {
     </head>
     <body>
       <main class="card">
-        <h1>${titulo}</h1>
-        <p>${texto}</p>
+        <h1>${escapeHtml(titulo)}</h1>
+        <p>${escapeHtml(texto)}</p>
 
-        <form method="POST" action="${action}">
-          <button type="submit">${botao}</button>
+        <form method="POST" action="${escapeHtml(action)}">
+          <button type="submit">${escapeHtml(botao)}</button>
         </form>
       </main>
     </body>
@@ -102,7 +111,7 @@ function paginaResultadoAutorizacao({ tipo, titulo, mensagem, detalhe }) {
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>${titulo}</title>
+      <title>${escapeHtml(titulo)}</title>
       <style>
         * {
           box-sizing: border-box;
@@ -219,13 +228,13 @@ function paginaResultadoAutorizacao({ tipo, titulo, mensagem, detalhe }) {
     </head>
     <body>
       <main class="card">
-        <div class="icon">${visual.icone}</div>
-        <div class="badge">${visual.texto}</div>
+        <div class="icon">${escapeHtml(visual.icone)}</div>
+        <div class="badge">${escapeHtml(visual.texto)}</div>
 
-        <h1>${titulo}</h1>
-        <p>${mensagem}</p>
+        <h1>${escapeHtml(titulo)}</h1>
+        <p>${escapeHtml(mensagem)}</p>
 
-        ${detalhe ? `<div class="detalhe">${detalhe}</div>` : ''}
+        ${detalhe ? `<div class="detalhe">${escapeHtml(detalhe)}</div>` : ''}
 
         <div class="actions">
           <button onclick="window.history.back()">Voltar ao sistema</button>
@@ -284,6 +293,14 @@ async function aprovar(req, res) {
   try {
     const { token } = req.params;
 
+    if (!tokenValido(token)) {
+      return res.status(400).send(paginaResultadoAutorizacao({
+        tipo: 'erro',
+        titulo: 'Link inválido',
+        mensagem: 'Esse link pode estar inválido, expirado ou já ter sido utilizado'
+      }));
+    }
+
     await autorizacoesService.responderAutorizacao(token, 'aprovada');
 
     return res.send(paginaResultadoAutorizacao({
@@ -296,7 +313,7 @@ async function aprovar(req, res) {
       tipo: 'erro',
       titulo: 'Não foi possível concluir',
       mensagem: 'Esse link pode estar inválido, expirado ou já ter sido utilizado',
-      detalhe: error.message
+      detalhe: process.env.NODE_ENV === 'production' ? '' : error.message
     }));
   }
 }
@@ -304,6 +321,14 @@ async function aprovar(req, res) {
 async function negar(req, res) {
   try {
     const { token } = req.params;
+
+    if (!tokenValido(token)) {
+      return res.status(400).send(paginaResultadoAutorizacao({
+        tipo: 'erro',
+        titulo: 'Link inválido',
+        mensagem: 'Esse link pode estar inválido, expirado ou já ter sido utilizado'
+      }));
+    }
 
     await autorizacoesService.responderAutorizacao(token, 'negada');
 
@@ -317,7 +342,7 @@ async function negar(req, res) {
       tipo: 'erro',
       titulo: 'Não foi possível concluir',
       mensagem: 'Esse link pode estar inválido, expirado ou já ter sido utilizado',
-      detalhe: error.message
+      detalhe: process.env.NODE_ENV === 'production' ? '' : error.message
     }));
   }
 }

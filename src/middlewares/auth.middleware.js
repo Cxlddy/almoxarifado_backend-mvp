@@ -38,7 +38,7 @@ async function autenticarUsuario(req, res, next) {
 
     const { data: usuario, error: usuarioError } = await supabase
       .from('usuarios')
-      .select('*')
+      .select('id, nome, email, perfil, setor_id, centro_custo_id, cargo, telefone, ativo')
       .eq('id', authData.user.id)
       .eq('ativo', true)
       .single();

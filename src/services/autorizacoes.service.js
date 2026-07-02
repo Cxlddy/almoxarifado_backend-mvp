@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import supabase from '../database/supabase.js';
 
 function gerarTokenCurto() {
-  return crypto.randomBytes(16).toString('base64url');
+  return crypto.randomBytes(32).toString('base64url');
 }
 
 async function criarAutorizacao({

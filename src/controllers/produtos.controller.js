@@ -1,4 +1,5 @@
 import produtosService from '../services/produtos.service.js';
+import { uuidValido } from '../utils/data.utils.js';
 
 async function listarProdutos(req, res) {
   try {
@@ -31,6 +32,18 @@ async function criarProduto(req, res) {
     if (!nome) {
       return res.status(400).json({
         mensagem: 'O nome do produto é obrigatório'
+      });
+    }
+
+    if (categoria_id && !uuidValido(categoria_id)) {
+      return res.status(400).json({
+        mensagem: 'Categoria inválida'
+      });
+    }
+
+    if (unidade_medida_id && !uuidValido(unidade_medida_id)) {
+      return res.status(400).json({
+        mensagem: 'Unidade de medida inválida'
       });
     }
 
