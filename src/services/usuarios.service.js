@@ -1,8 +1,7 @@
-import supabase from '../database/supabase.js';
+﻿import supabase from '../database/supabase.js';
 import { pick, uuidValido } from '../utils/data.utils.js';
 
 const CAMPOS_USUARIO = [
-  'id',
   'nome',
   'email',
   'perfil',
@@ -13,7 +12,7 @@ const CAMPOS_USUARIO = [
   'ativo'
 ];
 
-const CAMPOS_ATUALIZACAO_USUARIO = CAMPOS_USUARIO.filter((campo) => campo !== 'id');
+const CAMPOS_ATUALIZACAO_USUARIO = CAMPOS_USUARIO;
 
 async function listarUsuarios() {
   const { data, error } = await supabase
@@ -30,14 +29,40 @@ async function listarUsuarios() {
 
 async function criarUsuario(dadosUsuario) {
   const dadosSeguros = pick(dadosUsuario, CAMPOS_USUARIO);
+  const senha = String(dadosUsuario.senha || '');
 
-  if (!uuidValido(dadosSeguros.id)) {
-    throw new Error('ID de usuário inválido');
+  if (!dadosSeguros.nome) {
+    throw new Error('O nome do usuário é obrigatório');
+  }
+
+  if (!dadosSeguros.email) {
+    throw new Error('O email do usuário é obrigatório');
+  }
+
+  if (senha.length < 8) {
+    throw new Error('A senha inicial deve ter pelo menos 8 caracteres');
   }
 
   if (!['admin', 'usuario'].includes(dadosSeguros.perfil)) {
     dadosSeguros.perfil = 'usuario';
   }
+
+  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    email: dadosSeguros.email,
+    password: senha,
+    email_confirm: true,
+    user_metadata: {
+      nome: dadosSeguros.nome,
+      perfil: dadosSeguros.perfil
+    }
+  });
+
+  if (authError || !authData?.user) {
+    throw new Error(authError?.message || 'Erro ao criar usuário no Auth');
+  }
+
+  dadosSeguros.id = authData.user.id;
+  dadosSeguros.ativo = dadosSeguros.ativo !== false;
 
   const { data, error } = await supabase
     .from('usuarios')
@@ -46,6 +71,7 @@ async function criarUsuario(dadosUsuario) {
     .single();
 
   if (error) {
+    await supabase.auth.admin.deleteUser(authData.user.id);
     throw new Error(error.message);
   }
 
@@ -76,7 +102,6 @@ async function atualizarUsuario(id, dadosUsuario) {
 
   return data;
 }
-
 
 async function listarAdmins() {
   const { data, error } = await supabase

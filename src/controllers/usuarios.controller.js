@@ -1,4 +1,4 @@
-import usuariosService from '../services/usuarios.service.js';
+﻿import usuariosService from '../services/usuarios.service.js';
 
 async function listarUsuarios(req, res) {
   try {
@@ -15,9 +15,9 @@ async function listarUsuarios(req, res) {
 async function criarUsuario(req, res) {
   try {
     const {
-      id,
       nome,
       email,
+      senha,
       perfil,
       setor_id,
       centro_custo_id,
@@ -25,12 +25,6 @@ async function criarUsuario(req, res) {
       telefone,
       ativo
     } = req.body;
-
-    if (!id) {
-      return res.status(400).json({
-        mensagem: 'O id do usuário é obrigatório'
-      });
-    }
 
     if (!nome) {
       return res.status(400).json({
@@ -44,10 +38,16 @@ async function criarUsuario(req, res) {
       });
     }
 
+    if (!senha || String(senha).length < 8) {
+      return res.status(400).json({
+        mensagem: 'A senha inicial deve ter pelo menos 8 caracteres'
+      });
+    }
+
     const usuario = await usuariosService.criarUsuario({
-      id,
       nome,
       email,
+      senha,
       perfil,
       setor_id,
       centro_custo_id,
