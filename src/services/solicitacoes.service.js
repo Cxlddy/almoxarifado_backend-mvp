@@ -1,4 +1,4 @@
-import supabase from '../database/supabase.js';
+﻿import supabase from '../database/supabase.js';
 import autorizacoesService from './autorizacoes.service.js';
 import whatsappService from './whatsapp.service.js';
 import { numeroPositivo, uuidValido } from '../utils/data.utils.js';
@@ -139,17 +139,11 @@ async function enviarAutorizacaoParaAdmin(solicitacao, admin_id) {
   const linkAprovar = `${appPublicUrl}/a/${autorizacao.token_aprovacao}`;
   const linkNegar = `${appPublicUrl}/n/${autorizacao.token_negacao}`;
 
-  const mensagem = [
-    '*Nova solicitação de material*',
-    '',
-    `Responsável: ${admin.nome}`,
-    `Justificativa: ${solicitacao.justificativa || 'Não informada'}`,
-    `Observação: ${solicitacao.observacao || 'Não informada'}`,
-    '',
-    `Aprovar: ${linkAprovar}`,
-    '',
-    `Negar: ${linkNegar}`
-  ].join('\n');
+  const mensagem = whatsappService.montarMensagemAutorizacao({
+    solicitacao,
+    linkAprovar,
+    linkNegar
+  });
 
   await whatsappService.enviarMensagemWhatsapp({
     telefone: admin.telefone,

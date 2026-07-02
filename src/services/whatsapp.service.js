@@ -1,3 +1,5 @@
+﻿import { normalizarTelefone } from '../utils/data.utils.js';
+
 function montarMensagemAutorizacao({
   solicitacao,
   itens = [],
@@ -17,61 +19,53 @@ function montarMensagemAutorizacao({
           item.quantidade ||
           '-';
 
-        return `${index + 1}. ${nomeProduto} — Qtd: ${quantidade}`;
+        return `${index + 1}. ${nomeProduto} - Qtd: ${quantidade}`;
       }).join('\n')
     : 'Itens não informados';
 
   return `
-📦 *Nova Solicitação de Material*
+*Nova solicitação de material*
 
-Foi feita uma nova solicitação no sistema:
+Solicitação: ${solicitacao.id}
+Status: aguardando autorização
 
-━━━━━━━━━━━━━━━━━━━━
-
-🧾 *Solicitação*
-ID: ${solicitacao.id}
-
-📌 *Status*
-Aguardando autorização
-
-📝 *Justificativa*
+Justificativa:
 ${solicitacao.justificativa || 'Não informada'}
 
-💬 *Observação*
+Observação:
 ${solicitacao.observacao || 'Não informada'}
 
-━━━━━━━━━━━━━━━━━━━━
-
-📋 *Itens solicitados*
+Itens solicitados:
 ${listaItens}
 
-━━━━━━━━━━━━━━━━━━━━
-
-✅ *Aprovar solicitação*
+Aprovar solicitação:
 ${linkAprovar}
 
-❌ *Negar solicitação*
+Negar solicitação:
 ${linkNegar}
 
-━━━━━━━━━━━━━━━━━━━━
-
-⚠️ Esta autorização é individual e deve ser realizada apenas pelo responsável do almoxarifado.
+Esta autorização é individual e deve ser feita apenas pelo responsável do almoxarifado.
 `.trim();
 }
 
 async function enviarMensagemWhatsapp({ telefone, mensagem }) {
   const provider = process.env.WHATSAPP_PROVIDER || 'simulado';
+  const telefoneNormalizado = normalizarTelefone(telefone);
+
+  if (!telefoneNormalizado) {
+    throw new Error('Telefone de WhatsApp inválido');
+  }
 
   if (provider === 'evolution') {
     return enviarViaEvolution({
-      telefone,
+      telefone: telefoneNormalizado,
       mensagem
     });
   }
 
   return {
     simulado: true,
-    telefone,
+    telefone: telefoneNormalizado,
     mensagem
   };
 }

@@ -6,20 +6,21 @@ function emailValido(email) {
 
 async function login(req, res) {
   try {
-    const { email, senha } = req.body;
+    const { identificador, telefone, email, senha } = req.body;
+    const loginId = identificador || telefone || email;
 
-    if (!email || !senha || !emailValido(email)) {
+    if (!loginId || !senha) {
       return res.status(400).json({
-        mensagem: 'Email e senha são obrigatórios'
+        mensagem: 'Telefone e senha são obrigatórios'
       });
     }
 
-    const resultado = await authService.login(email, senha);
+    const resultado = await authService.login(loginId, senha);
 
     return res.status(200).json(resultado);
   } catch (error) {
     return res.status(401).json({
-      mensagem: 'Email ou senha inválidos'
+      mensagem: 'Telefone ou senha inválidos'
     });
   }
 }

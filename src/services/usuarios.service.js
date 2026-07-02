@@ -1,5 +1,10 @@
 ﻿import supabase from '../database/supabase.js';
-import { pick, uuidValido } from '../utils/data.utils.js';
+import {
+  normalizarTelefone,
+  pick,
+  telefoneValido,
+  uuidValido
+} from '../utils/data.utils.js';
 
 const CAMPOS_USUARIO = [
   'nome',
@@ -39,6 +44,10 @@ async function criarUsuario(dadosUsuario) {
     throw new Error('O email do usuário é obrigatório');
   }
 
+  if (!telefoneValido(dadosSeguros.telefone)) {
+    throw new Error('Telefone válido é obrigatório');
+  }
+
   if (senha.length < 8) {
     throw new Error('A senha inicial deve ter pelo menos 8 caracteres');
   }
@@ -46,6 +55,8 @@ async function criarUsuario(dadosUsuario) {
   if (!['admin', 'usuario'].includes(dadosSeguros.perfil)) {
     dadosSeguros.perfil = 'usuario';
   }
+
+  dadosSeguros.telefone = normalizarTelefone(dadosSeguros.telefone);
 
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
     email: dadosSeguros.email,
@@ -87,6 +98,14 @@ async function atualizarUsuario(id, dadosUsuario) {
 
   if (dadosSeguros.perfil && !['admin', 'usuario'].includes(dadosSeguros.perfil)) {
     throw new Error('Perfil inválido');
+  }
+
+  if (Object.prototype.hasOwnProperty.call(dadosSeguros, 'telefone')) {
+    if (!telefoneValido(dadosSeguros.telefone)) {
+      throw new Error('Telefone inválido');
+    }
+
+    dadosSeguros.telefone = normalizarTelefone(dadosSeguros.telefone);
   }
 
   const { data, error } = await supabase

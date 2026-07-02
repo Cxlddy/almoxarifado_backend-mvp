@@ -38,6 +38,12 @@ async function criarUsuario(req, res) {
       });
     }
 
+    if (!telefone) {
+      return res.status(400).json({
+        mensagem: 'O telefone do usuário é obrigatório'
+      });
+    }
+
     if (!senha || String(senha).length < 8) {
       return res.status(400).json({
         mensagem: 'A senha inicial deve ter pelo menos 8 caracteres'

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import supabase from '../database/supabase.js';
+import { normalizarTelefone } from '../utils/data.utils.js';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
@@ -10,10 +11,54 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey);
 
-async function login(email, senha) {
+function emailValido(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '');
+}
+
+async function buscarUsuarioPorIdentificador(identificador) {
+  if (emailValido(identificador)) {
+    const { data, error } = await supabase
+      .from('usuarios')
+      .select('id, nome, email, perfil, setor_id, centro_custo_id, cargo, telefone, ativo')
+      .eq('email', identificador)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Erro ao consultar usuário: ${error.message}`);
+    }
+
+    return data;
+  }
+
+  const telefone = normalizarTelefone(identificador);
+
+  if (!telefone) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('usuarios')
+    .select('id, nome, email, perfil, setor_id, centro_custo_id, cargo, telefone, ativo')
+    .eq('telefone', telefone)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Erro ao consultar usuário: ${error.message}`);
+  }
+
+  return data;
+}
+
+async function login(identificador, senha) {
+  const usuarioLogin = await buscarUsuarioPorIdentificador(identificador);
+
+  if (!usuarioLogin || usuarioLogin.ativo !== true) {
+    throw new Error('Usuário não encontrado ou inativo');
+  }
+
   const { data: loginData, error: loginError } =
     await supabaseAuth.auth.signInWithPassword({
-      email,
+      email: usuarioLogin.email,
       password: senha
     });
 
