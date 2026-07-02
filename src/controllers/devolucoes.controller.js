@@ -65,6 +65,12 @@ function paginaConfirmacao({ tipo, token, titulo, mensagem }) {
           width: 100%;
         }
       </style>
+      <script>
+        window.si = window.si || function () {
+          (window.siq = window.siq || []).push(arguments);
+        };
+      </script>
+      <script defer src="/_vercel/speed-insights/script.js"></script>
     </head>
     <body>
       <main class="card">
@@ -191,6 +197,12 @@ function paginaResultado({ tipo, titulo, mensagem }) {
           }
         }
       </style>
+      <script>
+        window.si = window.si || function () {
+          (window.siq = window.siq || []).push(arguments);
+        };
+      </script>
+      <script defer src="/_vercel/speed-insights/script.js"></script>
     </head>
     <body>
       <main class="card">

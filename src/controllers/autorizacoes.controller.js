@@ -57,6 +57,12 @@ function paginaConfirmacao({ titulo, texto, action, botao, cor }) {
           font-size: 16px;
         }
       </style>
+      <script>
+        window.si = window.si || function () {
+          (window.siq = window.siq || []).push(arguments);
+        };
+      </script>
+      <script defer src="/_vercel/speed-insights/script.js"></script>
     </head>
     <body>
       <main class="card">
@@ -216,6 +222,12 @@ function paginaResultadoAutorizacao({ tipo, titulo, mensagem, detalhe }) {
           }
         }
       </style>
+      <script>
+        window.si = window.si || function () {
+          (window.siq = window.siq || []).push(arguments);
+        };
+      </script>
+      <script defer src="/_vercel/speed-insights/script.js"></script>
     </head>
     <body>
       <main class="card">
