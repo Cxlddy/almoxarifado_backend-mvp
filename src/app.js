@@ -14,6 +14,7 @@ import movimentacoesRoutes from './routes/movimentacoes.routes.js';
 import saldoEstoqueRoutes from './routes/saldoEstoque.routes.js';
 import solicitacoesRoutes from './routes/solicitacoes.routes.js';
 import autorizacoesRoutes from './routes/autorizacoes.routes.js';
+import autorizacoesController from './controllers/autorizacoes.controller.js';
 import cadastrosRoutes from './routes/cadastros.routes.js';
 import usuariosRoutes from './routes/usuarios.routes.js';
 import authRoutes from './routes/auth.routes.js';
@@ -68,6 +69,11 @@ app.use(cors(corsOptions));
 app.use(securityHeaders);
 app.use(hideInternalErrors);
 app.use(apiLimiter);
+
+app.get('/a/:token', noStore, publicActionLimiter, autorizacoesController.telaAprovar);
+app.post('/a/:token', noStore, publicActionLimiter, autorizacoesController.aprovar);
+app.get('/n/:token', noStore, publicActionLimiter, autorizacoesController.telaNegar);
+app.post('/n/:token', noStore, publicActionLimiter, autorizacoesController.negar);
 
 app.use(express.json({ limit: '100kb', strict: true }));
 app.use(express.urlencoded({ extended: false, limit: '20kb' }));
