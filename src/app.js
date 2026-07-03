@@ -19,6 +19,7 @@ import cadastrosRoutes from './routes/cadastros.routes.js';
 import usuariosRoutes from './routes/usuarios.routes.js';
 import authRoutes from './routes/auth.routes.js';
 import devolucoesRoutes from './routes/devolucoes.routes.js';
+import devolucoesController from './controllers/devolucoes.controller.js';
 
 
 const app = express();
@@ -69,6 +70,10 @@ app.get('/a/:token', securityHeaders, noStore, publicActionLimiter, autorizacoes
 app.post('/a/:token', securityHeaders, noStore, publicActionLimiter, autorizacoesController.aprovar);
 app.get('/n/:token', securityHeaders, noStore, publicActionLimiter, autorizacoesController.telaNegar);
 app.post('/n/:token', securityHeaders, noStore, publicActionLimiter, autorizacoesController.negar);
+app.get('/devolucoes/confirmar/:token', securityHeaders, noStore, publicActionLimiter, devolucoesController.telaConfirmar);
+app.post('/devolucoes/confirmar/:token', securityHeaders, noStore, publicActionLimiter, devolucoesController.confirmarDevolucao);
+app.get('/devolucoes/negar/:token', securityHeaders, noStore, publicActionLimiter, devolucoesController.telaNegar);
+app.post('/devolucoes/negar/:token', securityHeaders, noStore, publicActionLimiter, devolucoesController.negarDevolucao);
 
 app.use(cors(corsOptions));
 app.use(securityHeaders);
