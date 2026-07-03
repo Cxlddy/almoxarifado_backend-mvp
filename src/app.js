@@ -65,15 +65,15 @@ const publicActionLimiter = rateLimit({
   message: 'Muitas tentativas. Aguarde alguns minutos.'
 });
 
+app.get('/a/:token', securityHeaders, noStore, publicActionLimiter, autorizacoesController.telaAprovar);
+app.post('/a/:token', securityHeaders, noStore, publicActionLimiter, autorizacoesController.aprovar);
+app.get('/n/:token', securityHeaders, noStore, publicActionLimiter, autorizacoesController.telaNegar);
+app.post('/n/:token', securityHeaders, noStore, publicActionLimiter, autorizacoesController.negar);
+
 app.use(cors(corsOptions));
 app.use(securityHeaders);
 app.use(hideInternalErrors);
 app.use(apiLimiter);
-
-app.get('/a/:token', noStore, publicActionLimiter, autorizacoesController.telaAprovar);
-app.post('/a/:token', noStore, publicActionLimiter, autorizacoesController.aprovar);
-app.get('/n/:token', noStore, publicActionLimiter, autorizacoesController.telaNegar);
-app.post('/n/:token', noStore, publicActionLimiter, autorizacoesController.negar);
 
 app.use(express.json({ limit: '100kb', strict: true }));
 app.use(express.urlencoded({ extended: false, limit: '20kb' }));
