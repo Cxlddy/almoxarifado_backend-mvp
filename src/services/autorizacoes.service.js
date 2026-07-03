@@ -5,6 +5,11 @@ function gerarTokenCurto() {
   return crypto.randomBytes(32).toString('base64url');
 }
 
+function erroDeColunaInexistente(error, coluna) {
+  const texto = String(error?.message || error || '').toLowerCase();
+  return texto.includes(coluna.toLowerCase()) || texto.includes('column');
+}
+
 async function criarAutorizacao({
   solicitacao_id,
   almoxarife_id,
@@ -76,14 +81,30 @@ async function responderAutorizacao(token, resposta) {
     throw new Error('Autorização inválida ou já respondida');
   }
 
-  const { error: erroSolicitacao } = await supabase
+  let payloadSolicitacao = {
+    status: novoStatusSolicitacao,
+    data_aprovacao: resposta === 'aprovada' ? new Date().toISOString() : null,
+    aprovado_por: autorizacao.almoxarife_id
+  };
+
+  let { error: erroSolicitacao } = await supabase
     .from('solicitacoes')
-    .update({
-      status: novoStatusSolicitacao,
-      data_aprovacao: resposta === 'aprovada' ? new Date().toISOString() : null,
-      aprovado_por: autorizacao.almoxarife_id
-    })
+    .update(payloadSolicitacao)
     .eq('id', autorizacao.solicitacao_id);
+
+  if (erroSolicitacao && erroDeColunaInexistente(erroSolicitacao, 'aprovado_por')) {
+    payloadSolicitacao = {
+      status: novoStatusSolicitacao,
+      data_aprovacao: resposta === 'aprovada' ? new Date().toISOString() : null
+    };
+
+    const fallback = await supabase
+      .from('solicitacoes')
+      .update(payloadSolicitacao)
+      .eq('id', autorizacao.solicitacao_id);
+
+    erroSolicitacao = fallback.error;
+  }
 
   if (erroSolicitacao) {
     await supabase

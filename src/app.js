@@ -70,6 +70,7 @@ app.use(hideInternalErrors);
 app.use(apiLimiter);
 
 app.use(express.json({ limit: '100kb', strict: true }));
+app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 app.use(sanitizeBody);
 
 app.use('/auth', authLimiter);
