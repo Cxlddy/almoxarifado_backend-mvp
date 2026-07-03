@@ -38,4 +38,11 @@ router.post(
   cadastrosController.criarFornecedor
 );
 
+router.post(
+  '/unidades-medida',
+  autenticarUsuario,
+  autorizarPerfis('admin'),
+  cadastrosController.criarUnidadeMedida
+);
+
 export default router;

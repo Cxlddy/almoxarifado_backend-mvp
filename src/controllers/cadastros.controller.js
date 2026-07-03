@@ -81,6 +81,15 @@ async function listarUnidadesMedida(req, res) {
   }
 }
 
+async function criarUnidadeMedida(req, res) {
+  try {
+    const unidade = await cadastrosService.criar('unidades_medida', req.body);
+    return res.status(201).json(unidade);
+  } catch (error) {
+    return res.status(500).json({ mensagem: 'Erro ao criar unidade de medida', erro: error.message });
+  }
+}
+
 export default {
   listarSetores,
   criarSetor,
@@ -90,5 +99,6 @@ export default {
   criarLocalEstoque,
   listarFornecedores,
   criarFornecedor,
-  listarUnidadesMedida
+  listarUnidadesMedida,
+  criarUnidadeMedida
 };
