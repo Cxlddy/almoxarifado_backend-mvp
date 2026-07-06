@@ -1,6 +1,18 @@
 import movimentacoesService from '../services/movimentacoes.service.js';
 import { numeroPositivo, uuidValido } from '../utils/data.utils.js';
 
+async function listarMovimentacoes(req, res) {
+  try {
+    const movimentacoes = await movimentacoesService.listarMovimentacoes();
+    return res.status(200).json(movimentacoes);
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: 'Erro ao listar movimentações',
+      erro: error.message
+    });
+  }
+}
+
 async function criarMovimentacao(req, res) {
   try {
     const {
