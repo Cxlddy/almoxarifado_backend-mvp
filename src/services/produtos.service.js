@@ -1,4 +1,4 @@
-import supabase from '../database/supabase.js';
+﻿import supabase from '../database/supabase.js';
 import { pick } from '../utils/data.utils.js';
 
 const CAMPOS_PRODUTO = [
@@ -61,7 +61,26 @@ async function criarProduto(dadosProduto) {
   return data;
 }
 
+async function atualizarProduto(id, dadosProduto) {
+  const dadosSeguros = pick(dadosProduto, [...CAMPOS_PRODUTO, 'ativo']);
+
+  const { data, error } = await supabase
+    .from('produtos')
+    .update(dadosSeguros)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 export default {
   listarProdutos,
-  criarProduto
+  criarProduto,
+  atualizarProduto
 };
+

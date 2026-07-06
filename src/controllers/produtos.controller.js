@@ -1,4 +1,4 @@
-import produtosService from '../services/produtos.service.js';
+﻿import produtosService from '../services/produtos.service.js';
 import { uuidValido } from '../utils/data.utils.js';
 
 async function listarProdutos(req, res) {
@@ -31,19 +31,19 @@ async function criarProduto(req, res) {
 
     if (!nome) {
       return res.status(400).json({
-        mensagem: 'O nome do produto é obrigatório'
+        mensagem: 'O nome do produto Ã© obrigatÃ³rio'
       });
     }
 
     if (categoria_id && !uuidValido(categoria_id)) {
       return res.status(400).json({
-        mensagem: 'Categoria inválida'
+        mensagem: 'Categoria invÃ¡lida'
       });
     }
 
     if (unidade_medida_id && !uuidValido(unidade_medida_id)) {
       return res.status(400).json({
-        mensagem: 'Unidade de medida inválida'
+        mensagem: 'Unidade de medida invÃ¡lida'
       });
     }
 
@@ -69,7 +69,38 @@ async function criarProduto(req, res) {
   }
 }
 
+async function atualizarProduto(req, res) {
+  try {
+    const { id } = req.params;
+    const dados = req.body || {};
+
+    if (!uuidValido(id)) {
+      return res.status(400).json({ mensagem: 'Produto inválido' });
+    }
+
+    if (dados.categoria_id && !uuidValido(dados.categoria_id)) {
+      return res.status(400).json({ mensagem: 'Categoria inválida' });
+    }
+
+    if (dados.unidade_medida_id && !uuidValido(dados.unidade_medida_id)) {
+      return res.status(400).json({ mensagem: 'Unidade de medida inválida' });
+    }
+
+    const produto = await produtosService.atualizarProduto(id, dados);
+
+    return res.status(200).json(produto);
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: 'Erro ao atualizar produto',
+      erro: error.message
+    });
+  }
+}
+
 export default {
   listarProdutos,
-  criarProduto
+  criarProduto,
+  atualizarProduto
 };
+
+

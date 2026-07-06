@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import produtosController from '../controllers/produtos.controller.js';
 import { autenticarUsuario, autorizarPerfis } from '../middlewares/auth.middleware.js';
 
@@ -18,4 +18,13 @@ router.post(
   produtosController.criarProduto
 );
 
+router.patch(
+  '/:id',
+  autenticarUsuario,
+  autorizarPerfis('admin'),
+  produtosController.atualizarProduto
+);
+
 export default router;
+
+
