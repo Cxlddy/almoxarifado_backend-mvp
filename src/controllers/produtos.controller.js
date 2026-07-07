@@ -31,19 +31,19 @@ async function criarProduto(req, res) {
 
     if (!nome) {
       return res.status(400).json({
-        mensagem: 'O nome do produto Ã© obrigatÃ³rio'
+        mensagem: 'O nome do produto e obrigatorio'
       });
     }
 
     if (categoria_id && !uuidValido(categoria_id)) {
       return res.status(400).json({
-        mensagem: 'Categoria invÃ¡lida'
+        mensagem: 'Categoria invalida'
       });
     }
 
     if (unidade_medida_id && !uuidValido(unidade_medida_id)) {
       return res.status(400).json({
-        mensagem: 'Unidade de medida invÃ¡lida'
+        mensagem: 'Unidade de medida invalida'
       });
     }
 
@@ -102,5 +102,6 @@ export default {
   criarProduto,
   atualizarProduto
 };
+
 
 

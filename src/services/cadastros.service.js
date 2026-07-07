@@ -1,5 +1,5 @@
-import supabase from '../database/supabase.js';
-import { pick } from '../utils/data.utils.js';
+﻿import supabase from '../database/supabase.js';
+import { pick, uuidValido } from '../utils/data.utils.js';
 
 const tabelasPermitidas = [
   'setores',
@@ -19,8 +19,42 @@ const camposPermitidosPorTabela = {
 
 function validarTabela(tabela) {
   if (!tabelasPermitidas.includes(tabela)) {
-    throw new Error('Tabela não permitida');
+    throw new Error('Tabela nao permitida');
   }
+}
+
+function validarId(id) {
+  if (!uuidValido(id)) {
+    throw new Error('Identificador invalido');
+  }
+}
+
+function prepararDados(tabela, dados, { parcial = false } = {}) {
+  const dadosSeguros = pick(dados, camposPermitidosPorTabela[tabela] || []);
+
+  if (!parcial && !dadosSeguros.nome) {
+    throw new Error('O campo nome e obrigatorio');
+  }
+
+  if (Object.prototype.hasOwnProperty.call(dadosSeguros, 'ativo')) {
+    dadosSeguros.ativo = dadosSeguros.ativo === true || dadosSeguros.ativo === 'true' || dadosSeguros.ativo === 1 || dadosSeguros.ativo === '1';
+  }
+
+  if (dadosSeguros.sigla) {
+    dadosSeguros.sigla = String(dadosSeguros.sigla).trim().toUpperCase().slice(0, 2);
+  }
+
+  Object.keys(dadosSeguros).forEach((campo) => {
+    if (typeof dadosSeguros[campo] === 'string') {
+      dadosSeguros[campo] = dadosSeguros[campo].trim();
+    }
+  });
+
+  if (parcial && Object.keys(dadosSeguros).length === 0) {
+    throw new Error('Nenhum campo valido para atualizar');
+  }
+
+  return dadosSeguros;
 }
 
 async function listar(tabela) {
@@ -40,12 +74,7 @@ async function listar(tabela) {
 
 async function criar(tabela, dados) {
   validarTabela(tabela);
-
-  if (!dados.nome) {
-    throw new Error('O campo nome é obrigatório');
-  }
-
-  const dadosSeguros = pick(dados, camposPermitidosPorTabela[tabela] || []);
+  const dadosSeguros = prepararDados(tabela, dados);
 
   const { data, error } = await supabase
     .from(tabela)
@@ -60,7 +89,27 @@ async function criar(tabela, dados) {
   return data;
 }
 
+async function atualizar(tabela, id, dados) {
+  validarTabela(tabela);
+  validarId(id);
+  const dadosSeguros = prepararDados(tabela, dados, { parcial: true });
+
+  const { data, error } = await supabase
+    .from(tabela)
+    .update(dadosSeguros)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 export default {
   listar,
-  criar
+  criar,
+  atualizar
 };

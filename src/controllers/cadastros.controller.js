@@ -1,104 +1,57 @@
-import cadastrosService from '../services/cadastros.service.js';
+﻿import cadastrosService from '../services/cadastros.service.js';
 
-async function listarSetores(req, res) {
-  try {
-    const dados = await cadastrosService.listar('setores');
-    return res.status(200).json(dados);
-  } catch (error) {
-    return res.status(500).json({ mensagem: 'Erro ao listar setores', erro: error.message });
-  }
+function responderErro(res, mensagem, error) {
+  const status = /obrigatorio|invalido|permitida|valido/i.test(error.message) ? 400 : 500;
+  return res.status(status).json({ mensagem, erro: error.message });
 }
 
-async function criarSetor(req, res) {
-  try {
-    const setor = await cadastrosService.criar('setores', req.body);
-    return res.status(201).json(setor);
-  } catch (error) {
-    return res.status(500).json({ mensagem: 'Erro ao criar setor', erro: error.message });
-  }
+function listar(tabela, mensagemErro) {
+  return async function listarCadastro(req, res) {
+    try {
+      const dados = await cadastrosService.listar(tabela);
+      return res.status(200).json(dados);
+    } catch (error) {
+      return responderErro(res, mensagemErro, error);
+    }
+  };
 }
 
-async function listarCentrosCusto(req, res) {
-  try {
-    const dados = await cadastrosService.listar('centros_custo');
-    return res.status(200).json(dados);
-  } catch (error) {
-    return res.status(500).json({ mensagem: 'Erro ao listar centros de custo', erro: error.message });
-  }
+function criar(tabela, mensagemErro) {
+  return async function criarCadastro(req, res) {
+    try {
+      const item = await cadastrosService.criar(tabela, req.body || {});
+      return res.status(201).json(item);
+    } catch (error) {
+      return responderErro(res, mensagemErro, error);
+    }
+  };
 }
 
-async function criarCentroCusto(req, res) {
-  try {
-    const centro = await cadastrosService.criar('centros_custo', req.body);
-    return res.status(201).json(centro);
-  } catch (error) {
-    return res.status(500).json({ mensagem: 'Erro ao criar centro de custo', erro: error.message });
-  }
-}
-
-async function listarLocaisEstoque(req, res) {
-  try {
-    const dados = await cadastrosService.listar('locais_estoque');
-    return res.status(200).json(dados);
-  } catch (error) {
-    return res.status(500).json({ mensagem: 'Erro ao listar locais de estoque', erro: error.message });
-  }
-}
-
-async function criarLocalEstoque(req, res) {
-  try {
-    const local = await cadastrosService.criar('locais_estoque', req.body);
-    return res.status(201).json(local);
-  } catch (error) {
-    return res.status(500).json({ mensagem: 'Erro ao criar local de estoque', erro: error.message });
-  }
-}
-
-async function listarFornecedores(req, res) {
-  try {
-    const dados = await cadastrosService.listar('fornecedores');
-    return res.status(200).json(dados);
-  } catch (error) {
-    return res.status(500).json({ mensagem: 'Erro ao listar fornecedores', erro: error.message });
-  }
-}
-
-async function criarFornecedor(req, res) {
-  try {
-    const fornecedor = await cadastrosService.criar('fornecedores', req.body);
-    return res.status(201).json(fornecedor);
-  } catch (error) {
-    return res.status(500).json({ mensagem: 'Erro ao criar fornecedor', erro: error.message });
-  }
-}
-
-async function listarUnidadesMedida(req, res) {
-  try {
-    const dados = await cadastrosService.listar('unidades_medida');
-    return res.status(200).json(dados);
-  } catch (error) {
-    return res.status(500).json({ mensagem: 'Erro ao listar unidades de medida', erro: error.message });
-  }
-}
-
-async function criarUnidadeMedida(req, res) {
-  try {
-    const unidade = await cadastrosService.criar('unidades_medida', req.body);
-    return res.status(201).json(unidade);
-  } catch (error) {
-    return res.status(500).json({ mensagem: 'Erro ao criar unidade de medida', erro: error.message });
-  }
+function atualizar(tabela, mensagemErro) {
+  return async function atualizarCadastro(req, res) {
+    try {
+      const item = await cadastrosService.atualizar(tabela, req.params.id, req.body || {});
+      return res.status(200).json(item);
+    } catch (error) {
+      return responderErro(res, mensagemErro, error);
+    }
+  };
 }
 
 export default {
-  listarSetores,
-  criarSetor,
-  listarCentrosCusto,
-  criarCentroCusto,
-  listarLocaisEstoque,
-  criarLocalEstoque,
-  listarFornecedores,
-  criarFornecedor,
-  listarUnidadesMedida,
-  criarUnidadeMedida
+  listarSetores: listar('setores', 'Erro ao listar setores'),
+  criarSetor: criar('setores', 'Erro ao criar setor'),
+  atualizarSetor: atualizar('setores', 'Erro ao atualizar setor'),
+  listarCentrosCusto: listar('centros_custo', 'Erro ao listar centros de custo'),
+  criarCentroCusto: criar('centros_custo', 'Erro ao criar centro de custo'),
+  atualizarCentroCusto: atualizar('centros_custo', 'Erro ao atualizar centro de custo'),
+  listarLocaisEstoque: listar('locais_estoque', 'Erro ao listar locais de estoque'),
+  criarLocalEstoque: criar('locais_estoque', 'Erro ao criar local de estoque'),
+  atualizarLocalEstoque: atualizar('locais_estoque', 'Erro ao atualizar local de estoque'),
+  listarFornecedores: listar('fornecedores', 'Erro ao listar fornecedores'),
+  criarFornecedor: criar('fornecedores', 'Erro ao criar fornecedor'),
+  atualizarFornecedor: atualizar('fornecedores', 'Erro ao atualizar fornecedor'),
+  listarUnidadesMedida: listar('unidades_medida', 'Erro ao listar unidades de medida'),
+  criarUnidadeMedida: criar('unidades_medida', 'Erro ao criar unidade de medida'),
+  atualizarUnidadeMedida: atualizar('unidades_medida', 'Erro ao atualizar unidade de medida')
 };
