@@ -1,4 +1,4 @@
-import supabase from '../database/supabase.js';
+﻿import supabase from '../database/supabase.js';
 
 async function listarMovimentacoes() {
   const { data, error } = await supabase
@@ -18,13 +18,13 @@ async function listarMovimentacoes() {
       usuarios ( id, nome, email )
     `)
     .order('data_movimentacao', { ascending: false })
-    .limit(300);
+    .limit(500);
 
   if (error) {
     throw new Error(error.message);
   }
 
-  return data;
+  return data || [];
 }
 
 async function criarMovimentacao(dadosMovimentacao) {
@@ -42,5 +42,6 @@ async function criarMovimentacao(dadosMovimentacao) {
 }
 
 export default {
+  listarMovimentacoes,
   criarMovimentacao
 };

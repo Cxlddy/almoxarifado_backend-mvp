@@ -1,4 +1,4 @@
-import movimentacoesService from '../services/movimentacoes.service.js';
+﻿import movimentacoesService from '../services/movimentacoes.service.js';
 import { numeroPositivo, uuidValido } from '../utils/data.utils.js';
 
 async function listarMovimentacoes(req, res) {
@@ -7,7 +7,7 @@ async function listarMovimentacoes(req, res) {
     return res.status(200).json(movimentacoes);
   } catch (error) {
     return res.status(500).json({
-      mensagem: 'Erro ao listar movimentações',
+      mensagem: 'Erro ao listar movimentacoes',
       erro: error.message
     });
   }
@@ -26,18 +26,18 @@ async function criarMovimentacao(req, res) {
       data_validade,
       documento,
       observacao
-    } = req.body;
+    } = req.body || {};
 
     if (!produto_id || !uuidValido(produto_id)) {
-      return res.status(400).json({ mensagem: 'O produto é obrigatório' });
+      return res.status(400).json({ mensagem: 'O produto e obrigatorio' });
     }
 
     if (!local_estoque_id || !uuidValido(local_estoque_id)) {
-      return res.status(400).json({ mensagem: 'O local de estoque é obrigatório' });
+      return res.status(400).json({ mensagem: 'O local de estoque e obrigatorio' });
     }
 
     if (!['entrada', 'saida'].includes(tipo)) {
-      return res.status(400).json({ mensagem: 'O tipo da movimentação é obrigatório' });
+      return res.status(400).json({ mensagem: 'O tipo da movimentacao e obrigatorio' });
     }
 
     if (!numeroPositivo(quantidade)) {
@@ -48,25 +48,26 @@ async function criarMovimentacao(req, res) {
       produto_id,
       local_estoque_id,
       usuario_id: req.usuario.id,
-      fornecedor_id,
+      fornecedor_id: fornecedor_id || null,
       tipo,
       origem: origem || 'manual',
-      quantidade,
-      lote,
-      data_validade,
-      documento,
-      observacao
+      quantidade: Number(quantidade),
+      lote: lote || null,
+      data_validade: data_validade || null,
+      documento: documento || null,
+      observacao: observacao || null
     });
 
     return res.status(201).json(movimentacao);
   } catch (error) {
     return res.status(500).json({
-      mensagem: 'Erro ao criar movimentação de estoque',
+      mensagem: 'Erro ao criar movimentacao de estoque',
       erro: error.message
     });
   }
 }
 
 export default {
+  listarMovimentacoes,
   criarMovimentacao
 };
