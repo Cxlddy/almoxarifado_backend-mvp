@@ -1,4 +1,4 @@
-﻿import supabase from '../database/supabase.js';
+import supabase from '../database/supabase.js';
 import { pick, uuidValido } from '../utils/data.utils.js';
 
 const camposPermitidos = ['nome', 'descricao', 'ativo'];
@@ -66,11 +66,22 @@ async function removerCategoria(id) {
     .delete()
     .eq('id', id);
 
-  if (error) {
+  if (!error) {
+    return { id };
+  }
+
+  const { data: desativada, error: erroDesativar } = await supabase
+    .from('categorias')
+    .update({ ativo: false })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (erroDesativar) {
     throw new Error(error.message);
   }
 
-  return { id };
+  return { ...desativada, desativado: true };
 }
 
 async function atualizarCategoria(id, dados) {
@@ -97,6 +108,7 @@ async function atualizarCategoria(id, dados) {
 export default {
   listarCategorias,
   criarCategoria,
-  atualizarCategoria
+  atualizarCategoria,
+  removerCategoria
 };
 

@@ -19,6 +19,20 @@ router.post(
 );
 
 router.post(
+  '/:id/aprovar',
+  autenticarUsuario,
+  autorizarPerfis('admin'),
+  solicitacoesController.aprovarSolicitacao
+);
+
+router.post(
+  '/:id/negar',
+  autenticarUsuario,
+  autorizarPerfis('admin'),
+  solicitacoesController.negarSolicitacao
+);
+
+router.post(
   '/:id/atender',
   autenticarUsuario,
   autorizarPerfis('admin'),

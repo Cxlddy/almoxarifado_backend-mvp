@@ -1,7 +1,55 @@
-﻿import supabase from '../database/supabase.js';
+import supabase from '../database/supabase.js';
 import autorizacoesService from './autorizacoes.service.js';
 import whatsappService from './whatsapp.service.js';
 import { numeroPositivo, uuidValido } from '../utils/data.utils.js';
+
+function erroDeColunaInexistente(error, coluna) {
+  const texto = String(error?.message || error || '').toLowerCase();
+  return texto.includes(coluna.toLowerCase()) || texto.includes('column');
+}
+
+async function anexarAutorizacoes(solicitacoes) {
+  const ids = (solicitacoes || []).map((s) => s.id).filter(Boolean);
+
+  if (!ids.length) {
+    return solicitacoes || [];
+  }
+
+  const { data: autorizacoes, error } = await supabase
+    .from('autorizacoes_solicitacao')
+    .select(`
+      id,
+      solicitacao_id,
+      almoxarife_id,
+      status,
+      respondido_em,
+      usuarios:almoxarife_id (
+        id,
+        nome,
+        email,
+        telefone
+      )
+    `)
+    .in('solicitacao_id', ids);
+
+  if (error) {
+    console.error('Erro ao anexar autorizações:', error.message);
+    return solicitacoes || [];
+  }
+
+  const porSolicitacao = new Map();
+
+  for (const autorizacao of autorizacoes || []) {
+    if (!porSolicitacao.has(autorizacao.solicitacao_id)) {
+      porSolicitacao.set(autorizacao.solicitacao_id, autorizacao);
+    }
+  }
+
+  return (solicitacoes || []).map((solicitacao) => ({
+    ...solicitacao,
+    autorizacao_admin: porSolicitacao.get(solicitacao.id) || null
+  }));
+}
 
 async function listarSolicitacoes(usuario) {
   let query = supabase
@@ -51,7 +99,7 @@ async function listarSolicitacoes(usuario) {
     throw new Error(error.message);
   }
 
-  return data;
+  return anexarAutorizacoes(data || []);
 }
 
 async function buscarSolicitacaoCompleta(id) {
@@ -97,7 +145,8 @@ async function buscarSolicitacaoCompleta(id) {
     throw new Error(error.message);
   }
 
-  return data;
+  const [comAutorizacao] = await anexarAutorizacoes([data]);
+  return comAutorizacao;
 }
 
 async function criarSolicitacao(dadosSolicitacao, itens, admin_id) {
@@ -115,6 +164,22 @@ async function criarSolicitacao(dadosSolicitacao, itens, admin_id) {
     }
   });
 
+  const { data: admin, error: erroAdmin } = await supabase
+    .from('usuarios')
+    .select('id, nome, telefone, perfil, ativo')
+    .eq('id', admin_id)
+    .eq('perfil', 'admin')
+    .eq('ativo', true)
+    .single();
+
+  if (erroAdmin || !admin) {
+    throw new Error('Admin responsável não encontrado ou inativo');
+  }
+
+  if (!admin.telefone) {
+    throw new Error('O admin selecionado não possui telefone cadastrado');
+  }
+
   const { data: solicitacao, error: erroSolicitacao } = await supabase
     .from('solicitacoes')
     .insert([dadosSolicitacao])
@@ -128,7 +193,7 @@ async function criarSolicitacao(dadosSolicitacao, itens, admin_id) {
   const itensComSolicitacao = itens.map((item) => ({
     solicitacao_id: solicitacao.id,
     produto_id: item.produto_id,
-    quantidade_solicitada: item.quantidade_solicitada,
+    quantidade_solicitada: Number(item.quantidade_solicitada),
     observacao: item.observacao || null
   }));
 
@@ -144,7 +209,7 @@ async function criarSolicitacao(dadosSolicitacao, itens, admin_id) {
   const solicitacaoCompleta = await buscarSolicitacaoCompleta(solicitacao.id);
 
   try {
-    await enviarAutorizacaoParaAdmin(solicitacaoCompleta, admin_id);
+    await enviarAutorizacaoParaAdmin(solicitacaoCompleta, admin);
   } catch (error) {
     console.error('Erro ao enviar autorização por WhatsApp:', error.message);
   }
@@ -155,28 +220,8 @@ async function criarSolicitacao(dadosSolicitacao, itens, admin_id) {
   };
 }
 
-async function enviarAutorizacaoParaAdmin(solicitacao, admin_id) {
-  const appPublicUrl = process.env.APP_PUBLIC_URL || 'http://localhost:3000';
-
-  if (!admin_id) {
-    throw new Error('Selecione um admin para receber a autorização');
-  }
-
-  const { data: admin, error } = await supabase
-    .from('usuarios')
-    .select('id, nome, telefone, perfil, ativo')
-    .eq('id', admin_id)
-    .eq('perfil', 'admin')
-    .eq('ativo', true)
-    .single();
-
-  if (error || !admin) {
-    throw new Error('Admin responsável não encontrado ou inativo');
-  }
-
-  if (!admin.telefone) {
-    throw new Error('O admin selecionado não possui telefone cadastrado');
-  }
+async function enviarAutorizacaoParaAdmin(solicitacao, admin) {
+  const appPublicUrl = process.env.APP_PUBLIC_URL || process.env.BACKEND_PUBLIC_URL || 'http://localhost:3000';
 
   const autorizacao = await autorizacoesService.criarAutorizacao({
     solicitacao_id: solicitacao.id,
@@ -200,6 +245,95 @@ async function enviarAutorizacaoParaAdmin(solicitacao, admin_id) {
     telefone: admin.telefone,
     mensagem
   });
+}
+
+async function atualizarSolicitacaoStatusComFallback({ solicitacao_id, status, usuario_id }) {
+  const dataResposta = new Date().toISOString();
+  const tentativas = [
+    {
+      status,
+      data_aprovacao: status === 'aprovada' ? dataResposta : null,
+      aprovado_por: usuario_id
+    },
+    {
+      status,
+      data_aprovacao: status === 'aprovada' ? dataResposta : null
+    },
+    { status }
+  ];
+
+  let ultimoErro = null;
+
+  for (const payload of tentativas) {
+    const { error } = await supabase
+      .from('solicitacoes')
+      .update(payload)
+      .eq('id', solicitacao_id);
+
+    if (!error) return;
+
+    ultimoErro = error;
+
+    if (!erroDeColunaInexistente(error, 'aprovado_por') && !erroDeColunaInexistente(error, 'data_aprovacao')) {
+      break;
+    }
+  }
+
+  throw new Error(ultimoErro?.message || 'Erro ao atualizar solicitação');
+}
+
+async function responderSolicitacaoPeloSistema({ solicitacao_id, usuario_id, resposta }) {
+  if (!uuidValido(solicitacao_id) || !uuidValido(usuario_id)) {
+    throw new Error('Solicitação inválida');
+  }
+
+  const { data: autorizacao, error: erroAutorizacao } = await supabase
+    .from('autorizacoes_solicitacao')
+    .select('*')
+    .eq('solicitacao_id', solicitacao_id)
+    .eq('almoxarife_id', usuario_id)
+    .eq('status', 'pendente')
+    .maybeSingle();
+
+  if (erroAutorizacao) {
+    throw new Error(erroAutorizacao.message);
+  }
+
+  if (!autorizacao) {
+    throw new Error('Apenas o admin responsável pela solicitação pode aprovar ou negar pelo sistema');
+  }
+
+  if (autorizacao.expira_em && new Date(autorizacao.expira_em) < new Date()) {
+    await supabase
+      .from('autorizacoes_solicitacao')
+      .update({ status: 'expirada' })
+      .eq('id', autorizacao.id);
+
+    throw new Error('Autorização expirada');
+  }
+
+  const statusSolicitacao = resposta === 'aprovada' ? 'aprovada' : 'recusada';
+
+  await atualizarSolicitacaoStatusComFallback({
+    solicitacao_id,
+    status: statusSolicitacao,
+    usuario_id
+  });
+
+  const { error: erroResposta } = await supabase
+    .from('autorizacoes_solicitacao')
+    .update({
+      status: resposta,
+      respondido_em: new Date().toISOString()
+    })
+    .eq('id', autorizacao.id)
+    .eq('status', 'pendente');
+
+  if (erroResposta) {
+    throw new Error(erroResposta.message);
+  }
+
+  return buscarSolicitacaoCompleta(solicitacao_id);
 }
 
 async function atenderSolicitacao({ solicitacao_id, local_estoque_id, usuario_id }) {
@@ -284,5 +418,6 @@ async function atenderSolicitacao({ solicitacao_id, local_estoque_id, usuario_id
 export default {
   listarSolicitacoes,
   criarSolicitacao,
+  responderSolicitacaoPeloSistema,
   atenderSolicitacao
 };

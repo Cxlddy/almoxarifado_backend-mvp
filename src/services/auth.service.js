@@ -15,44 +15,53 @@ function emailValido(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '');
 }
 
+function candidatosTelefone(identificador) {
+  const raw = String(identificador || '').trim();
+  const digits = raw.replace(/\D/g, '');
+  const normalizado = normalizarTelefone(raw);
+  const sem55 = normalizado.startsWith('55') ? normalizado.slice(2) : normalizado;
+
+  return [...new Set([raw, digits, normalizado, sem55].filter(Boolean))];
+}
+
 async function buscarUsuarioPorIdentificador(identificador) {
   if (emailValido(identificador)) {
     const { data, error } = await supabase
       .from('usuarios')
       .select('id, nome, email, perfil, setor_id, centro_custo_id, cargo, telefone, ativo')
-      .eq('email', identificador)
+      .eq('email', String(identificador).trim().toLowerCase())
       .maybeSingle();
 
     if (error) {
-      throw new Error(`Erro ao consultar usuário: ${error.message}`);
+      throw new Error('Erro ao consultar usuário');
     }
 
     return data;
   }
 
-  const telefone = normalizarTelefone(identificador);
+  const telefones = candidatosTelefone(identificador);
 
-  if (!telefone) {
+  if (!telefones.length) {
     return null;
   }
 
   const { data, error } = await supabase
     .from('usuarios')
     .select('id, nome, email, perfil, setor_id, centro_custo_id, cargo, telefone, ativo')
-    .eq('telefone', telefone)
-    .maybeSingle();
+    .in('telefone', telefones)
+    .limit(1);
 
   if (error) {
-    throw new Error(`Erro ao consultar usuário: ${error.message}`);
+    throw new Error('Erro ao consultar usuário');
   }
 
-  return data;
+  return data?.[0] || null;
 }
 
 async function login(identificador, senha) {
   const usuarioLogin = await buscarUsuarioPorIdentificador(identificador);
 
-  if (!usuarioLogin || usuarioLogin.ativo !== true) {
+  if (!usuarioLogin || usuarioLogin.ativo !== true || !usuarioLogin.email) {
     throw new Error('Usuário não encontrado ou inativo');
   }
 
@@ -62,32 +71,18 @@ async function login(identificador, senha) {
       password: senha
     });
 
-  if (loginError) {
-    throw new Error(loginError.message);
+  if (loginError || !loginData?.session?.access_token || !loginData?.user) {
+    throw new Error('Credenciais inválidas');
   }
-
-  const authUser = loginData.user;
 
   const { data: usuario, error: usuarioError } = await supabase
     .from('usuarios')
     .select('id, nome, email, perfil, setor_id, centro_custo_id, cargo, telefone, ativo')
-    .eq('id', authUser.id)
+    .eq('id', loginData.user.id)
     .maybeSingle();
 
-  if (usuarioError) {
-    throw new Error(`Erro ao consultar tabela usuarios: ${usuarioError.message}`);
-  }
-
-  if (!usuario) {
-    throw new Error(
-      `Usuário autenticado no Supabase Auth, mas não existe na tabela usuarios.`
-    );
-  }
-
-  if (usuario.ativo !== true) {
-    throw new Error(
-      `Usuário encontrado na tabela usuarios, mas está inativo. ID: ${usuario.id} | Email: ${usuario.email}`
-    );
+  if (usuarioError || !usuario || usuario.ativo !== true) {
+    throw new Error('Usuário não encontrado ou sem permissão de acesso');
   }
 
   return {

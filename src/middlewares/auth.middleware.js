@@ -2,16 +2,6 @@ import supabase from '../database/supabase.js';
 
 async function autenticarUsuario(req, res, next) {
   try {
-    if (process.env.AUTH_DESABILITADA === 'true' && process.env.NODE_ENV !== 'production') {
-      req.usuario = {
-        id: null,
-        nome: 'Desenvolvimento',
-        perfil: 'admin'
-      };
-
-      return next();
-    }
-
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
@@ -56,9 +46,9 @@ async function autenticarUsuario(req, res, next) {
 
     return next();
   } catch (error) {
+    console.error('Erro na autenticação:', error.message);
     return res.status(500).json({
-      mensagem: 'Erro na autenticação',
-      erro: error.message
+      mensagem: 'Erro na autenticação'
     });
   }
 }

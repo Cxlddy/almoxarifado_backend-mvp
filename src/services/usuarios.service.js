@@ -1,4 +1,4 @@
-﻿import supabase from '../database/supabase.js';
+import supabase from '../database/supabase.js';
 import {
   normalizarTelefone,
   pick,
@@ -146,17 +146,30 @@ async function removerUsuario(id, usuarioLogado) {
     .delete()
     .eq('id', id);
 
+  let retorno = usuarioExistente;
+
   if (tabelaError) {
-    throw new Error(tabelaError.message);
+    const { data: usuarioDesativado, error: desativarError } = await supabase
+      .from('usuarios')
+      .update({ ativo: false })
+      .eq('id', id)
+      .select('id, nome, email, ativo')
+      .single();
+
+    if (desativarError) {
+      throw new Error(tabelaError.message);
+    }
+
+    retorno = { ...usuarioDesativado, desativado: true };
   }
 
   const { error: authError } = await supabase.auth.admin.deleteUser(id);
 
   if (authError) {
-    throw new Error('Usuário removido da tabela, mas houve erro ao remover o acesso no Auth: ' + authError.message);
+    console.error('Erro ao remover acesso do Auth:', authError.message);
   }
 
-  return usuarioExistente;
+  return retorno;
 }
 
 async function listarAdmins() {

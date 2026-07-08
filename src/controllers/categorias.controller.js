@@ -1,4 +1,4 @@
-﻿import categoriasService from '../services/categorias.service.js';
+import categoriasService from '../services/categorias.service.js';
 
 function responderErro(res, mensagem, error) {
   const status = /obrigatorio|invalido|valido/i.test(error.message) ? 400 : 500;
@@ -43,6 +43,7 @@ async function removerCategoria(req, res) {
 export default {
   listarCategorias,
   criarCategoria,
-  atualizarCategoria
+  atualizarCategoria,
+  removerCategoria
 };
 

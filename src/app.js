@@ -21,31 +21,50 @@ import authRoutes from './routes/auth.routes.js';
 import devolucoesRoutes from './routes/devolucoes.routes.js';
 import devolucoesController from './controllers/devolucoes.controller.js';
 
-
 const app = express();
 
 app.disable('x-powered-by');
 app.set('trust proxy', 1);
 
-const allowedOrigins = (process.env.CORS_ORIGINS || [
-    'https://almoxarifado-theta.vercel.app',
-    'https://almoxarifado-backend-tan.vercel.app'
-  ].join(','))
-  .split(',')
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const defaultOrigins = [
+  'https://almoxarifado-theta.vercel.app',
+  'https://almoxarifado-backend-tan.vercel.app',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500'
+];
+
+const allowedOrigins = [
+  ...defaultOrigins,
+  ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
+  ...(process.env.CORS_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+]
+  .map((origin) => origin.replace(/\/$/, ''))
+  .filter((origin, index, list) => origin && list.indexOf(origin) === index);
+
+function origemPermitida(origin) {
+  if (!origin) return true;
+
+  const origem = origin.replace(/\/$/, '');
+
+  if (allowedOrigins.includes(origem)) return true;
+
+  // Permite os deploys do próprio projeto no Vercel sem abrir CORS para qualquer domínio.
+  return /^https:\/\/almoxarifado[-a-z0-9]*\.vercel\.app$/i.test(origem);
+}
 
 const corsOptions = {
   origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
+    return callback(null, origemPermitida(origin));
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false
+  credentials: false,
+  maxAge: 86400
 };
 
 const apiLimiter = rateLimit({
@@ -66,6 +85,9 @@ const publicActionLimiter = rateLimit({
   message: 'Muitas tentativas. Aguarde alguns minutos.'
 });
 
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions));
+
 app.get('/a/:token', securityHeaders, noStore, publicActionLimiter, autorizacoesController.telaAprovar);
 app.post('/a/:token', securityHeaders, noStore, publicActionLimiter, autorizacoesController.aprovar);
 app.get('/n/:token', securityHeaders, noStore, publicActionLimiter, autorizacoesController.telaNegar);
@@ -75,7 +97,6 @@ app.post('/devolucoes/confirmar/:token', securityHeaders, noStore, publicActionL
 app.get('/devolucoes/negar/:token', securityHeaders, noStore, publicActionLimiter, devolucoesController.telaNegar);
 app.post('/devolucoes/negar/:token', securityHeaders, noStore, publicActionLimiter, devolucoesController.negarDevolucao);
 
-app.use(cors(corsOptions));
 app.use(securityHeaders);
 app.use(hideInternalErrors);
 app.use(apiLimiter);

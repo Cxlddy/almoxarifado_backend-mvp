@@ -1,4 +1,4 @@
-﻿import movimentacoesService from '../services/movimentacoes.service.js';
+import movimentacoesService from '../services/movimentacoes.service.js';
 import { numeroPositivo, uuidValido } from '../utils/data.utils.js';
 
 async function listarMovimentacoes(req, res) {
@@ -36,7 +36,20 @@ async function criarMovimentacao(req, res) {
       return res.status(400).json({ mensagem: 'O local de estoque e obrigatorio' });
     }
 
-    if (!['entrada', 'saida'].includes(tipo)) {
+    let tipoMovimentacao = tipo;
+    let origemMovimentacao = origem || 'manual';
+
+    if (tipo === 'ajuste_entrada') {
+      tipoMovimentacao = 'entrada';
+      origemMovimentacao = 'inventario';
+    }
+
+    if (tipo === 'ajuste_saida') {
+      tipoMovimentacao = 'saida';
+      origemMovimentacao = 'inventario';
+    }
+
+    if (!['entrada', 'saida'].includes(tipoMovimentacao)) {
       return res.status(400).json({ mensagem: 'O tipo da movimentacao e obrigatorio' });
     }
 
@@ -49,8 +62,8 @@ async function criarMovimentacao(req, res) {
       local_estoque_id,
       usuario_id: req.usuario.id,
       fornecedor_id: fornecedor_id || null,
-      tipo,
-      origem: origem || 'manual',
+      tipo: tipoMovimentacao,
+      origem: origemMovimentacao,
       quantidade: Number(quantidade),
       lote: lote || null,
       data_validade: data_validade || null,

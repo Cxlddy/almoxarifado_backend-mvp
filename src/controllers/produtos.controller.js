@@ -1,5 +1,5 @@
-﻿import produtosService from '../services/produtos.service.js';
-import { uuidValido } from '../utils/data.utils.js';
+import produtosService from '../services/produtos.service.js';
+import { numeroPositivo, uuidValido } from '../utils/data.utils.js';
 
 async function listarProdutos(req, res) {
   try {
@@ -18,7 +18,6 @@ async function criarProduto(req, res) {
   try {
     const {
       categoria_id,
-      unidade_medida_id,
       nome,
       descricao,
       codigo_interno,
@@ -26,30 +25,31 @@ async function criarProduto(req, res) {
       estoque_minimo,
       estoque_maximo,
       controla_validade,
-      controla_lote
+      controla_lote,
+      quantidade_inicial,
+      local_estoque_id
     } = req.body;
 
     if (!nome) {
       return res.status(400).json({
-        mensagem: 'O nome do produto e obrigatorio'
+        mensagem: 'O nome do produto é obrigatório'
       });
     }
 
     if (categoria_id && !uuidValido(categoria_id)) {
       return res.status(400).json({
-        mensagem: 'Categoria invalida'
+        mensagem: 'Categoria inválida'
       });
     }
 
-    if (unidade_medida_id && !uuidValido(unidade_medida_id)) {
+    if (Number(quantidade_inicial || 0) > 0 && !uuidValido(local_estoque_id)) {
       return res.status(400).json({
-        mensagem: 'Unidade de medida invalida'
+        mensagem: 'Informe o local de estoque para registrar a quantidade inicial'
       });
     }
 
     const produto = await produtosService.criarProduto({
-      categoria_id,
-      unidade_medida_id,
+      categoria_id: categoria_id || null,
       nome,
       descricao,
       codigo_interno,
@@ -57,7 +57,10 @@ async function criarProduto(req, res) {
       estoque_minimo,
       estoque_maximo,
       controla_validade,
-      controla_lote
+      controla_lote,
+      quantidade_inicial: numeroPositivo(quantidade_inicial) ? Number(quantidade_inicial) : 0,
+      local_estoque_id: local_estoque_id || null,
+      usuario_id: req.usuario.id
     });
 
     return res.status(201).json(produto);
@@ -82,10 +85,6 @@ async function atualizarProduto(req, res) {
       return res.status(400).json({ mensagem: 'Categoria inválida' });
     }
 
-    if (dados.unidade_medida_id && !uuidValido(dados.unidade_medida_id)) {
-      return res.status(400).json({ mensagem: 'Unidade de medida inválida' });
-    }
-
     const produto = await produtosService.atualizarProduto(id, dados);
 
     return res.status(200).json(produto);
@@ -97,11 +96,33 @@ async function atualizarProduto(req, res) {
   }
 }
 
+async function removerProduto(req, res) {
+  try {
+    const { id } = req.params;
+
+    if (!uuidValido(id)) {
+      return res.status(400).json({ mensagem: 'Produto inválido' });
+    }
+
+    const resultado = await produtosService.removerProduto(id);
+
+    return res.status(200).json({
+      mensagem: resultado.desativado
+        ? 'Produto possui histórico e foi desativado do catálogo'
+        : 'Produto excluído com sucesso',
+      produto: resultado
+    });
+  } catch (error) {
+    return res.status(500).json({
+      mensagem: 'Erro ao excluir produto',
+      erro: error.message
+    });
+  }
+}
+
 export default {
   listarProdutos,
   criarProduto,
-  atualizarProduto
+  atualizarProduto,
+  removerProduto
 };
-
-
-

@@ -1,10 +1,15 @@
-﻿import { normalizarTelefone } from '../utils/data.utils.js';
+import { normalizarTelefone } from '../utils/data.utils.js';
 
 function formatarQuantidade(valor) {
   const numero = Number(valor || 0);
   return Number.isFinite(numero)
     ? numero.toLocaleString('pt-BR', { maximumFractionDigits: 3 })
     : '-';
+}
+
+function formatarData(valor) {
+  if (!valor) return 'Não informada';
+  return new Date(valor).toLocaleString('pt-BR');
 }
 
 function montarMensagemAutorizacao({
@@ -25,46 +30,45 @@ function montarMensagemAutorizacao({
     ? itens.map((item, index) => {
         const produto = item.produtos || item.produto || {};
         const nomeProduto = produto.nome || item.produto_nome || item.nome || 'Produto não informado';
-        const codigo = produto.codigo_interno ? ` | Código: ${produto.codigo_interno}` : '';
+        const codigo = produto.codigo_interno || 'Sem código';
         const quantidade = formatarQuantidade(item.quantidade_solicitada || item.quantidade);
-        const observacao = item.observacao ? ` | Obs.: ${item.observacao}` : '';
+        const observacao = item.observacao ? `\n   Observação: ${item.observacao}` : '';
 
-        return `${index + 1}. ${nomeProduto}${codigo} | Quantidade: ${quantidade}${observacao}`;
-      }).join('\n')
+        return `${index + 1}) ${nomeProduto}\n   Código: ${codigo}\n   Quantidade: ${quantidade}${observacao}`;
+      }).join('\n\n')
     : 'Itens não informados';
 
-  return `
-*Solicitação de material - Almoxarifado*
-
-Olá${admin?.nome ? `, ${admin.nome}` : ''}. Há uma nova solicitação aguardando sua autorização.
-
-*Dados da solicitação*
-ID: ${solicitacao.id}
-Status: aguardando autorização
-Data: ${solicitacao.data_solicitacao ? new Date(solicitacao.data_solicitacao).toLocaleString('pt-BR') : 'Não informada'}
-
-*Solicitante*
-Nome: ${pessoa.nome || 'Não informado'}
-Email: ${pessoa.email || 'Não informado'}
-Cargo: ${pessoa.cargo || 'Não informado'}
-Setor: ${setor}
-Centro de custo: ${centro}
-
-*Itens solicitados*
-${listaItens}
-
-*Justificativa*
-${solicitacao.justificativa || 'Não informada'}
-
-*Observação*
-${solicitacao.observacao || 'Não informada'}
-
-*Ação necessária*
-Aprovar: ${linkAprovar}
-Negar: ${linkNegar}
-
-Esta autorização é individual e deve ser feita apenas pelo responsável do almoxarifado.
-`.trim();
+  return [
+    '*Solicitação de material - Almoxarifado*',
+    '',
+    `Olá${admin?.nome ? `, ${admin.nome}` : ''}.`,
+    'Existe uma solicitação aguardando sua análise.',
+    '',
+    '*Resumo da solicitação*',
+    `ID: ${solicitacao.id}`,
+    `Data: ${formatarData(solicitacao.data_solicitacao)}`,
+    `Status: Aguardando autorização`,
+    '',
+    '*Solicitante*',
+    `Nome: ${pessoa.nome || 'Não informado'}`,
+    `Email: ${pessoa.email || 'Não informado'}`,
+    `Telefone: ${pessoa.telefone || 'Não informado'}`,
+    `Cargo: ${pessoa.cargo || 'Não informado'}`,
+    `Setor: ${setor}`,
+    `Centro de custo: ${centro}`,
+    '',
+    '*Itens solicitados*',
+    listaItens,
+    '',
+    '*Justificativa*',
+    solicitacao.justificativa || 'Não informada',
+    '',
+    '*Ação*',
+    `Aprovar: ${linkAprovar}`,
+    `Negar: ${linkNegar}`,
+    '',
+    'Você também pode aprovar ou negar diretamente na tela de Solicitações do sistema.'
+  ].join('\n');
 }
 
 async function enviarMensagemWhatsapp({ telefone, mensagem }) {

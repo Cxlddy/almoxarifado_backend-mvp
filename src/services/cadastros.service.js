@@ -1,4 +1,4 @@
-﻿import supabase from '../database/supabase.js';
+import supabase from '../database/supabase.js';
 import { pick, uuidValido } from '../utils/data.utils.js';
 
 const tabelasPermitidas = [
@@ -98,11 +98,22 @@ async function remover(tabela, id) {
     .delete()
     .eq('id', id);
 
-  if (error) {
+  if (!error) {
+    return { id };
+  }
+
+  const { data: desativado, error: erroDesativar } = await supabase
+    .from(tabela)
+    .update({ ativo: false })
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (erroDesativar) {
     throw new Error(error.message);
   }
 
-  return { id };
+  return { ...desativado, desativado: true };
 }
 
 async function atualizar(tabela, id, dados) {
@@ -127,6 +138,7 @@ async function atualizar(tabela, id, dados) {
 export default {
   listar,
   criar,
-  atualizar
+  atualizar,
+  remover
 };
 
