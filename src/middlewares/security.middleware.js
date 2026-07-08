@@ -1,15 +1,12 @@
-﻿const DEFAULT_MAX_BODY_DEPTH = 8;
+const DEFAULT_MAX_BODY_DEPTH = 8;
 const DEFAULT_MAX_STRING_LENGTH = 2000;
-const DEFAULT_MAX_ARRAY_LENGTH = 100;
 
 function securityHeaders(req, res, next) {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
-  res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
   res.setHeader('Referrer-Policy', 'no-referrer');
-  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
-  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'"
@@ -47,16 +44,7 @@ function hideInternalErrors(req, res, next) {
 }
 
 function clientKey(req) {
-  const forwardedFor = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
-  return forwardedFor || req.ip || req.socket?.remoteAddress || 'unknown';
-}
-
-function pruneExpiredHits(hits, now) {
-  if (hits.size < 1000) return;
-
-  for (const [key, value] of hits.entries()) {
-    if (value.resetAt <= now) hits.delete(key);
-  }
+  return req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress || 'unknown';
 }
 
 function rateLimit({ windowMs, max, message }) {
@@ -64,8 +52,6 @@ function rateLimit({ windowMs, max, message }) {
 
   return (req, res, next) => {
     const now = Date.now();
-    pruneExpiredHits(hits, now);
-
     const key = clientKey(req);
     const current = hits.get(key);
 
@@ -104,7 +90,7 @@ function sanitizeValue(value, depth = 0) {
   }
 
   if (Array.isArray(value)) {
-    if (value.length > DEFAULT_MAX_ARRAY_LENGTH) {
+    if (value.length > 100) {
       throw new Error('Lista muito grande');
     }
 
@@ -116,7 +102,7 @@ function sanitizeValue(value, depth = 0) {
 
     for (const [key, item] of Object.entries(value)) {
       if (['__proto__', 'prototype', 'constructor'].includes(key)) {
-        throw new Error('Campo invalido');
+        throw new Error('Campo inválido');
       }
 
       sanitized[key] = sanitizeValue(item, depth + 1);

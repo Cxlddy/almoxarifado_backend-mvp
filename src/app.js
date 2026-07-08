@@ -1,4 +1,4 @@
-﻿import express from 'express';
+import express from 'express';
 import cors from 'cors';
 import {
   hideInternalErrors,
@@ -41,7 +41,7 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    return callback(new Error(`Origem nao permitida pelo CORS: ${origin}`));
+    return callback(new Error(`Origem não permitida pelo CORS: ${origin}`));
   },
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -51,13 +51,13 @@ const corsOptions = {
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 600,
-  message: 'Muitas requisicoes. Tente novamente mais tarde.'
+  message: 'Muitas requisições. Tente novamente mais tarde.'
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 30,
-  message: 'Muitas tentativas de autenticacao. Aguarde alguns minutos.'
+  message: 'Muitas tentativas de autenticação. Aguarde alguns minutos.'
 });
 
 const publicActionLimiter = rateLimit({
@@ -87,10 +87,6 @@ app.use(sanitizeBody);
 app.use('/auth', authLimiter);
 app.use(['/a', '/n', '/devolucoes/confirmar', '/devolucoes/negar'], noStore, publicActionLimiter);
 
-app.get('/health', noStore, (req, res) => {
-  res.status(200).json({ status: 'ok', servico: 'almoxarifado-api', uptime: Math.round(process.uptime()), timestamp: new Date().toISOString() });
-});
-
 app.get('/', (req, res) => {
   res.json({ mensagem: 'API do almoxarifado funcionando' });
 });
@@ -107,15 +103,15 @@ app.use('/auth', authRoutes);
 app.use('/devolucoes', devolucoesRoutes);
 
 app.use((req, res) => {
-  res.status(404).json({ mensagem: 'Recurso nao encontrado' });
+  res.status(404).json({ mensagem: 'Recurso não encontrado' });
 });
 
 app.use((error, req, res, next) => {
   if (error?.type === 'entity.parse.failed') {
-    return res.status(400).json({ mensagem: 'JSON invalido' });
+    return res.status(400).json({ mensagem: 'JSON inválido' });
   }
 
-  console.error('Erro nao tratado:', error);
+  console.error('Erro não tratado:', error);
 
   return res.status(500).json({
     mensagem: 'Erro interno do servidor'
@@ -123,4 +119,3 @@ app.use((error, req, res, next) => {
 });
 
 export default app;
-
