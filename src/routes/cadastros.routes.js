@@ -22,4 +22,11 @@ router.patch('/locais-estoque/:id', autenticarUsuario, autorizarPerfis('admin'),
 router.patch('/fornecedores/:id', autenticarUsuario, autorizarPerfis('admin'), cadastrosController.atualizarFornecedor);
 router.patch('/unidades-medida/:id', autenticarUsuario, autorizarPerfis('admin'), cadastrosController.atualizarUnidadeMedida);
 
+router.delete('/setores/:id', autenticarUsuario, autorizarPerfis('admin'), cadastrosController.removerSetor);
+router.delete('/centros-custo/:id', autenticarUsuario, autorizarPerfis('admin'), cadastrosController.removerCentroCusto);
+router.delete('/locais-estoque/:id', autenticarUsuario, autorizarPerfis('admin'), cadastrosController.removerLocalEstoque);
+router.delete('/fornecedores/:id', autenticarUsuario, autorizarPerfis('admin'), cadastrosController.removerFornecedor);
+router.delete('/unidades-medida/:id', autenticarUsuario, autorizarPerfis('admin'), cadastrosController.removerUnidadeMedida);
+
 export default router;
+

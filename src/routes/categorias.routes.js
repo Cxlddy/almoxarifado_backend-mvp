@@ -7,5 +7,7 @@ const router = express.Router();
 router.get('/', autenticarUsuario, autorizarPerfis('admin', 'usuario'), categoriasController.listarCategorias);
 router.post('/', autenticarUsuario, autorizarPerfis('admin'), categoriasController.criarCategoria);
 router.patch('/:id', autenticarUsuario, autorizarPerfis('admin'), categoriasController.atualizarCategoria);
+router.delete('/:id', autenticarUsuario, autorizarPerfis('admin'), categoriasController.removerCategoria);
 
 export default router;
+

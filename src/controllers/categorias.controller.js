@@ -32,8 +32,17 @@ async function atualizarCategoria(req, res) {
   }
 }
 
+async function removerCategoria(req, res) {
+  try {
+    await categoriasService.removerCategoria(req.params.id);
+    return res.status(200).json({ mensagem: 'Categoria excluida com sucesso' });
+  } catch (error) {
+    return responderErro(res, 'Erro ao excluir categoria', error);
+  }
+}
 export default {
   listarCategorias,
   criarCategoria,
   atualizarCategoria
 };
+

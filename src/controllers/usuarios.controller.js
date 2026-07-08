@@ -86,6 +86,25 @@ async function atualizarUsuario(req, res) {
   }
 }
 
+async function removerUsuario(req, res) {
+  try {
+    const { id } = req.params;
+    const usuario = await usuariosService.removerUsuario(id, req.usuario);
+
+    return res.status(200).json({
+      mensagem: 'Usuário excluído com sucesso',
+      usuario
+    });
+  } catch (error) {
+    const status = /próprio|proprio|não encontrado|nao encontrado|inválido|invalido/i.test(error.message) ? 400 : 500;
+
+    return res.status(status).json({
+      mensagem: 'Erro ao excluir usuário',
+      erro: error.message
+    });
+  }
+}
+
 async function listarAdmins(req, res) {
   try {
     const admins = await usuariosService.listarAdmins();
@@ -102,5 +121,10 @@ export default {
   listarUsuarios,
   listarAdmins,
   criarUsuario,
-  atualizarUsuario
+  atualizarUsuario,
+  removerUsuario
 };
+
+
+
+

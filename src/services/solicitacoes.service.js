@@ -54,6 +54,52 @@ async function listarSolicitacoes(usuario) {
   return data;
 }
 
+async function buscarSolicitacaoCompleta(id) {
+  const { data, error } = await supabase
+    .from('solicitacoes')
+    .select(`
+      id,
+      status,
+      justificativa,
+      observacao,
+      data_solicitacao,
+      usuarios:solicitante_id (
+        id,
+        nome,
+        email,
+        cargo,
+        telefone
+      ),
+      setores (
+        id,
+        nome
+      ),
+      centros_custo (
+        id,
+        codigo,
+        nome
+      ),
+      solicitacao_itens (
+        id,
+        quantidade_solicitada,
+        observacao,
+        produtos (
+          id,
+          nome,
+          codigo_interno
+        )
+      )
+    `)
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
 async function criarSolicitacao(dadosSolicitacao, itens, admin_id) {
   if (!uuidValido(admin_id)) {
     throw new Error('Admin responsável inválido');
@@ -73,7 +119,7 @@ async function criarSolicitacao(dadosSolicitacao, itens, admin_id) {
     .from('solicitacoes')
     .insert([dadosSolicitacao])
     .select()
-    .single()
+    .single();
 
   if (erroSolicitacao) {
     throw new Error(erroSolicitacao.message);
@@ -95,14 +141,16 @@ async function criarSolicitacao(dadosSolicitacao, itens, admin_id) {
     throw new Error(erroItens.message);
   }
 
+  const solicitacaoCompleta = await buscarSolicitacaoCompleta(solicitacao.id);
+
   try {
-    await enviarAutorizacaoParaAdmin(solicitacao, admin_id);
+    await enviarAutorizacaoParaAdmin(solicitacaoCompleta, admin_id);
   } catch (error) {
-    console.error('Erro ao enviar autorização por Whatsapp: ', error.message);
+    console.error('Erro ao enviar autorização por WhatsApp:', error.message);
   }
 
   return {
-    ...solicitacao,
+    ...solicitacaoCompleta,
     itens: itensCriados
   };
 }
@@ -141,6 +189,9 @@ async function enviarAutorizacaoParaAdmin(solicitacao, admin_id) {
 
   const mensagem = whatsappService.montarMensagemAutorizacao({
     solicitacao,
+    solicitante: solicitacao.usuarios,
+    itens: solicitacao.solicitacao_itens || [],
+    admin,
     linkAprovar,
     linkNegar
   });

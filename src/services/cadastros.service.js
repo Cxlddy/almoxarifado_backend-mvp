@@ -89,6 +89,22 @@ async function criar(tabela, dados) {
   return data;
 }
 
+async function remover(tabela, id) {
+  validarTabela(tabela);
+  validarId(id);
+
+  const { error } = await supabase
+    .from(tabela)
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return { id };
+}
+
 async function atualizar(tabela, id, dados) {
   validarTabela(tabela);
   validarId(id);
@@ -113,3 +129,4 @@ export default {
   criar,
   atualizar
 };
+

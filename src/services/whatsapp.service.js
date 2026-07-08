@@ -1,48 +1,67 @@
 ﻿import { normalizarTelefone } from '../utils/data.utils.js';
 
+function formatarQuantidade(valor) {
+  const numero = Number(valor || 0);
+  return Number.isFinite(numero)
+    ? numero.toLocaleString('pt-BR', { maximumFractionDigits: 3 })
+    : '-';
+}
+
 function montarMensagemAutorizacao({
   solicitacao,
+  solicitante,
   itens = [],
+  admin,
   linkAprovar,
   linkNegar
 }) {
+  const pessoa = solicitante || solicitacao?.usuarios || {};
+  const setor = solicitacao?.setores?.nome || 'Não informado';
+  const centro = solicitacao?.centros_custo
+    ? `${solicitacao.centros_custo.codigo || ''} ${solicitacao.centros_custo.nome || ''}`.trim()
+    : 'Não informado';
+
   const listaItens = itens.length
     ? itens.map((item, index) => {
-        const nomeProduto =
-          item.produto_nome ||
-          item.produtos?.nome ||
-          item.nome ||
-          'Produto não informado';
+        const produto = item.produtos || item.produto || {};
+        const nomeProduto = produto.nome || item.produto_nome || item.nome || 'Produto não informado';
+        const codigo = produto.codigo_interno ? ` | Código: ${produto.codigo_interno}` : '';
+        const quantidade = formatarQuantidade(item.quantidade_solicitada || item.quantidade);
+        const observacao = item.observacao ? ` | Obs.: ${item.observacao}` : '';
 
-        const quantidade =
-          item.quantidade_solicitada ||
-          item.quantidade ||
-          '-';
-
-        return `${index + 1}. ${nomeProduto} - Qtd: ${quantidade}`;
+        return `${index + 1}. ${nomeProduto}${codigo} | Quantidade: ${quantidade}${observacao}`;
       }).join('\n')
     : 'Itens não informados';
 
   return `
-*Nova solicitação de material*
+*Solicitação de material - Almoxarifado*
 
-Solicitação: ${solicitacao.id}
+Olá${admin?.nome ? `, ${admin.nome}` : ''}. Há uma nova solicitação aguardando sua autorização.
+
+*Dados da solicitação*
+ID: ${solicitacao.id}
 Status: aguardando autorização
+Data: ${solicitacao.data_solicitacao ? new Date(solicitacao.data_solicitacao).toLocaleString('pt-BR') : 'Não informada'}
 
-Justificativa:
-${solicitacao.justificativa || 'Não informada'}
+*Solicitante*
+Nome: ${pessoa.nome || 'Não informado'}
+Email: ${pessoa.email || 'Não informado'}
+Cargo: ${pessoa.cargo || 'Não informado'}
+Setor: ${setor}
+Centro de custo: ${centro}
 
-Observação:
-${solicitacao.observacao || 'Não informada'}
-
-Itens solicitados:
+*Itens solicitados*
 ${listaItens}
 
-Aprovar solicitação:
-${linkAprovar}
+*Justificativa*
+${solicitacao.justificativa || 'Não informada'}
 
-Negar solicitação:
-${linkNegar}
+*Observação*
+${solicitacao.observacao || 'Não informada'}
+
+*Ação necessária*
+Aprovar: ${linkAprovar}
+Negar: ${linkNegar}
 
 Esta autorização é individual e deve ser feita apenas pelo responsável do almoxarifado.
 `.trim();

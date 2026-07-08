@@ -56,6 +56,23 @@ async function criarCategoria(dados) {
   return data;
 }
 
+async function removerCategoria(id) {
+  if (!uuidValido(id)) {
+    throw new Error('Identificador invalido');
+  }
+
+  const { error } = await supabase
+    .from('categorias')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return { id };
+}
+
 async function atualizarCategoria(id, dados) {
   if (!uuidValido(id)) {
     throw new Error('Identificador invalido');
@@ -82,3 +99,4 @@ export default {
   criarCategoria,
   atualizarCategoria
 };
+

@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import usuariosController from '../controllers/usuarios.controller.js';
 import { autenticarUsuario, autorizarPerfis } from '../middlewares/auth.middleware.js';
 
@@ -17,5 +17,6 @@ router.use(autorizarPerfis('admin'));
 router.get('/', usuariosController.listarUsuarios);
 router.post('/', usuariosController.criarUsuario);
 router.patch('/:id', usuariosController.atualizarUsuario);
+router.delete('/:id', usuariosController.removerUsuario);
 
 export default router;

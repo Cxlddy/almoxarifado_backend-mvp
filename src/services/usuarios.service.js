@@ -122,6 +122,43 @@ async function atualizarUsuario(id, dadosUsuario) {
   return data;
 }
 
+async function removerUsuario(id, usuarioLogado) {
+  if (!uuidValido(id)) {
+    throw new Error('ID de usuário inválido');
+  }
+
+  if (usuarioLogado?.id === id) {
+    throw new Error('Você não pode excluir o próprio usuário logado');
+  }
+
+  const { data: usuarioExistente, error: consultaError } = await supabase
+    .from('usuarios')
+    .select('id, nome, email')
+    .eq('id', id)
+    .single();
+
+  if (consultaError || !usuarioExistente) {
+    throw new Error(consultaError?.message || 'Usuário não encontrado');
+  }
+
+  const { error: tabelaError } = await supabase
+    .from('usuarios')
+    .delete()
+    .eq('id', id);
+
+  if (tabelaError) {
+    throw new Error(tabelaError.message);
+  }
+
+  const { error: authError } = await supabase.auth.admin.deleteUser(id);
+
+  if (authError) {
+    throw new Error('Usuário removido da tabela, mas houve erro ao remover o acesso no Auth: ' + authError.message);
+  }
+
+  return usuarioExistente;
+}
+
 async function listarAdmins() {
   const { data, error } = await supabase
     .from('usuarios')
@@ -141,5 +178,10 @@ export default {
   listarUsuarios,
   listarAdmins,
   criarUsuario,
-  atualizarUsuario
+  atualizarUsuario,
+  removerUsuario
 };
+
+
+
+
